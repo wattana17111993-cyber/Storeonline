@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StoreOS — ระบบจัดการร้านค้า</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f11;
+    --bg2: #16161a;
+    --bg3: #1e1e24;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #e8e8ec;
+    --muted: #7a7a8c;
+    --accent: #6ee7b7;
+    --accent2: #a78bfa;
+    --accent3: #fbbf24;
+    --red: #f87171;
+    --blue: #60a5fa;
+    --font: 'IBM Plex Sans Thai', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:var(--font); min-height:100vh; display:flex; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 220px; min-width:220px; background:var(--bg2); border-right:1px solid var(--border);
+    display:flex; flex-direction:column; padding:0;
+  }
+  .logo {
+    padding: 22px 20px 18px;
+    border-bottom: 1px solid var(--border);
+    display:flex; align-items:center; gap:10px;
+  }
+  .logo-icon {
+    width:32px; height:32px; background:var(--accent); border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-size:14px; font-weight:500; color:#0f0f11;
+  }
+  .logo-text { font-size:15px; font-weight:600; letter-spacing:.02em; }
+  .logo-sub { font-size:10px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; }
+
+  .nav { padding:12px 0; flex:1; }
+  .nav-section { padding:8px 16px 4px; font-size:10px; color:var(--muted); letter-spacing:.1em; text-transform:uppercase; }
+  .nav-item {
+    display:flex; align-items:center; gap:10px; padding:9px 16px;
+    font-size:13.5px; color:var(--muted); cursor:pointer; border-left:2px solid transparent;
+    transition: all .15s; user-select:none;
+  }
+  .nav-item:hover { color:var(--text); background:rgba(255,255,255,.04); }
+  .nav-item.active { color:var(--accent); border-left-color:var(--accent); background:rgba(110,231,183,.06); }
+  .nav-icon { font-size:15px; width:18px; text-align:center; }
+  .nav-badge {
+    margin-left:auto; background:var(--accent3); color:#0f0f11;
+    font-size:10px; font-weight:600; padding:1px 6px; border-radius:20px; font-family:var(--mono);
+  }
+
+  .sidebar-footer { padding:16px; border-top:1px solid var(--border); }
+  .role-badge {
+    display:inline-flex; align-items:center; gap:6px; font-size:11px;
+    padding:5px 10px; border-radius:6px; border:1px solid var(--border2);
+    color:var(--muted); font-family:var(--mono);
+  }
+  .role-dot { width:6px; height:6px; border-radius:50%; }
+
+  /* MAIN */
+  .main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+
+  .topbar {
+    padding:16px 28px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:16px; background:var(--bg2);
+  }
+  .topbar-title { font-size:16px; font-weight:600; flex:1; }
+  .topbar-sub { font-size:12px; color:var(--muted); margin-top:1px; }
+
+  .btn {
+    display:inline-flex; align-items:center; gap:7px; padding:8px 16px;
+    font-size:13px; font-family:var(--font); border-radius:8px; cursor:pointer;
+    border:none; transition:all .15s; font-weight:500;
+  }
+  .btn-primary { background:var(--accent); color:#0f0f11; }
+  .btn-primary:hover { background:#4ade80; transform:translateY(-1px); }
+  .btn-ghost { background:transparent; color:var(--muted); border:1px solid var(--border2); }
+  .btn-ghost:hover { color:var(--text); border-color:var(--border2); background:rgba(255,255,255,.05); }
+  .btn-danger { background:rgba(248,113,113,.12); color:var(--red); border:1px solid rgba(248,113,113,.25); }
+  .btn-danger:hover { background:rgba(248,113,113,.22); }
+
+  .content { flex:1; overflow-y:auto; padding:28px; }
+
+  /* STATS GRID */
+  .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px; }
+  .stat-card {
+    background:var(--bg2); border:1px solid var(--border); border-radius:12px;
+    padding:18px 20px; position:relative; overflow:hidden;
+  }
+  .stat-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  }
+  .stat-card.green::before { background:var(--accent); }
+  .stat-card.purple::before { background:var(--accent2); }
+  .stat-card.amber::before { background:var(--accent3); }
+  .stat-card.red::before { background:var(--red); }
+  .stat-label { font-size:11px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; margin-bottom:10px; }
+  .stat-value { font-size:26px; font-weight:600; font-family:var(--mono); letter-spacing:-.02em; }
+  .stat-change { font-size:11px; margin-top:6px; color:var(--muted); }
+  .stat-change.up { color:var(--accent); }
+
+  /* TABLES */
+  .section { background:var(--bg2); border:1px solid var(--border); border-radius:12px; margin-bottom:20px; }
+  .section-head {
+    padding:16px 20px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:12px;
+  }
+  .section-title { font-size:14px; font-weight:600; flex:1; }
+  .section-sub { font-size:12px; color:var(--muted); }
+
+  table { width:100%; border-collapse:collapse; }
+  th {
+    text-align:left; font-size:11px; color:var(--muted); letter-spacing:.07em;
+    text-transform:uppercase; padding:12px 20px; border-bottom:1px solid var(--border);
+    font-weight:500; background:var(--bg3);
+  }
+  td { padding:13px 20px; font-size:13.5px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:rgba(255,255,255,.025); }
+
+  .status-pill {
+    display:inline-flex; align-items:center; gap:5px; padding:3px 10px;
+    border-radius:20px; font-size:11.5px; font-weight:500; font-family:var(--mono);
+  }
+  .status-pill::before { content:''; width:5px; height:5px; border-radius:50%; }
+  .pill-pending { background:rgba(251,191,36,.1); color:var(--accent3); border:1px solid rgba(251,191,36,.25); }
+  .pill-pending::before { background:var(--accent3); }
+  .pill-paid { background:rgba(110,231,183,.1); color:var(--accent); border:1px solid rgba(110,231,183,.25); }
+  .pill-paid::before { background:var(--accent); }
+  .pill-processing { background:rgba(96,165,250,.1); color:var(--blue); border:1px solid rgba(96,165,250,.25); }
+  .pill-processing::before { background:var(--blue); }
+  .pill-shipped { background:rgba(167,139,250,.1); color:var(--accent2); border:1px solid rgba(167,139,250,.25); }
+  .pill-shipped::before { background:var(--accent2); }
+  .pill-rejected { background:rgba(248,113,113,.1); color:var(--red); border:1px solid rgba(248,113,113,.25); }
+  .pill-rejected::before { background:var(--red); }
+
+  .amount { font-family:var(--mono); font-size:13px; }
+
+  /* MODAL */
+  .overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,.7); backdrop-filter:blur(4px);
+    display:none; align-items:center; justify-content:center; z-index:100;
+  }
+  .overlay.show { display:flex; animation:fadeIn .15s ease; }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+  .modal {
+    background:var(--bg2); border:1px solid var(--border2); border-radius:16px;
+    width:520px; max-width:95vw; max-height:90vh; overflow-y:auto;
+    animation:slideUp .2s ease;
+  }
+  @keyframes slideUp { from{transform:translateY(12px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .modal-head { padding:20px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; }
+  .modal-title { font-size:15px; font-weight:600; flex:1; }
+  .modal-close { background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer; padding:0 4px; line-height:1; }
+  .modal-close:hover { color:var(--text); }
+  .modal-body { padding:24px; }
+  .modal-foot { padding:16px 24px; border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; }
+
+  .form-group { margin-bottom:18px; }
+  .form-label { font-size:12px; color:var(--muted); margin-bottom:7px; display:block; letter-spacing:.04em; }
+  .form-input {
+    width:100%; padding:10px 14px; background:var(--bg3); border:1px solid var(--border2);
+    border-radius:8px; color:var(--text); font-size:13.5px; font-family:var(--font);
+    outline:none; transition:border-color .15s;
+  }
+  .form-input:focus { border-color:var(--accent); }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .form-select {
+    width:100%; padding:10px 14px; background:var(--bg3); border:1px solid var(--border2);
+    border-radius:8px; color:var(--text); font-size:13.5px; font-family:var(--font);
+    outline:none; cursor:pointer;
+  }
+
+  /* TABS */
+  .tabs { display:flex; gap:0; border-bottom:1px solid var(--border); padding:0 20px; }
+  .tab {
+    padding:12px 18px; font-size:13px; cursor:pointer; color:var(--muted);
+    border-bottom:2px solid transparent; margin-bottom:-1px; transition:all .15s;
+  }
+  .tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+  .tab:hover { color:var(--text); }
+
+  /* PRODUCT GRID */
+  .product-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; padding:20px; }
+  .product-card {
+    background:var(--bg3); border:1px solid var(--border); border-radius:10px;
+    padding:16px; cursor:pointer; transition:all .15s;
+  }
+  .product-card:hover { border-color:var(--border2); transform:translateY(-1px); }
+  .product-img {
+    width:100%; height:90px; background:linear-gradient(135deg,#1e1e2e,#2a2a3e);
+    border-radius:8px; margin-bottom:12px; display:flex; align-items:center;
+    justify-content:center; font-size:28px;
+  }
+  .product-name { font-size:13px; font-weight:500; margin-bottom:6px; }
+  .product-price { font-family:var(--mono); font-size:13px; color:var(--accent); }
+  .product-stock { font-size:11px; color:var(--muted); margin-top:4px; }
+  .stock-low { color:var(--red); }
+
+  /* ORDER DETAIL */
+  .order-timeline { padding:20px; }
+  .timeline-item { display:flex; gap:14px; margin-bottom:20px; position:relative; }
+  .timeline-item:not(:last-child)::before {
+    content:''; position:absolute; left:11px; top:24px; bottom:-8px;
+    width:1px; background:var(--border2);
+  }
+  .timeline-dot {
+    width:24px; height:24px; border-radius:50%; border:2px solid var(--border2);
+    display:flex; align-items:center; justify-content:center; font-size:11px;
+    flex-shrink:0; margin-top:1px;
+  }
+  .timeline-dot.done { border-color:var(--accent); background:rgba(110,231,183,.12); color:var(--accent); }
+  .timeline-dot.active { border-color:var(--accent3); background:rgba(251,191,36,.12); color:var(--accent3); }
+  .timeline-info { font-size:13px; }
+  .timeline-title { font-weight:500; margin-bottom:2px; }
+  .timeline-time { font-size:11px; color:var(--muted); font-family:var(--mono); }
+
+  /* SLIP PREVIEW */
+  .slip-preview {
+    background:var(--bg3); border:1px solid var(--border2); border-radius:10px;
+    padding:16px; text-align:center; margin-bottom:16px;
+  }
+  .slip-img-placeholder {
+    width:100%; height:180px; background:linear-gradient(135deg,#1a1a2e,#16213e);
+    border-radius:8px; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:8px; margin-bottom:12px;
+  }
+  .slip-icon { font-size:36px; opacity:.4; }
+  .slip-text { font-size:12px; color:var(--muted); }
+
+  /* SEARCH */
+  .search-bar {
+    display:flex; align-items:center; gap:10px; background:var(--bg3);
+    border:1px solid var(--border); border-radius:8px; padding:8px 14px;
+  }
+  .search-bar input {
+    background:none; border:none; color:var(--text); font-size:13.5px;
+    font-family:var(--font); outline:none; flex:1;
+  }
+  .search-bar input::placeholder { color:var(--muted); }
+
+  /* PAGE VISIBILITY */
+  .page { display:none; }
+  .page.active { display:block; }
+
+  /* CART */
+  .cart-item {
+    display:flex; align-items:center; gap:14px; padding:14px 0;
+    border-bottom:1px solid var(--border);
+  }
+  .cart-item:last-child { border-bottom:none; }
+  .cart-emoji { font-size:24px; width:40px; text-align:center; }
+  .cart-name { flex:1; font-size:13.5px; }
+  .cart-price { font-family:var(--mono); font-size:13px; color:var(--accent); }
+  .qty-ctrl { display:flex; align-items:center; gap:8px; }
+  .qty-btn {
+    width:24px; height:24px; border-radius:6px; background:var(--bg3);
+    border:1px solid var(--border2); color:var(--text); cursor:pointer;
+    font-size:14px; display:flex; align-items:center; justify-content:center;
+  }
+  .qty-val { font-family:var(--mono); font-size:13px; min-width:20px; text-align:center; }
+
+  /* TOAST */
+  .toast-container { position:fixed; bottom:24px; right:24px; display:flex; flex-direction:column; gap:8px; z-index:200; }
+  .toast {
+    background:var(--bg2); border:1px solid var(--border2); border-radius:10px;
+    padding:12px 18px; font-size:13px; display:flex; align-items:center; gap:10px;
+    animation:toastIn .25s ease; box-shadow:0 8px 32px rgba(0,0,0,.4);
+  }
+  @keyframes toastIn { from{transform:translateX(20px);opacity:0} to{transform:translateX(0);opacity:1} }
+  .toast.success { border-color:rgba(110,231,183,.3); }
+  .toast.error { border-color:rgba(248,113,113,.3); }
+  .toast-icon { font-size:16px; }
+
+  /* ROLE SWITCHER */
+  .role-switcher { display:flex; gap:8px; margin-bottom:20px; }
+  .role-btn {
+    padding:7px 16px; border-radius:8px; font-size:12.5px; cursor:pointer;
+    border:1px solid var(--border2); color:var(--muted); background:transparent;
+    transition:all .15s; font-family:var(--font);
+  }
+  .role-btn.active { background:var(--accent); color:#0f0f11; border-color:var(--accent); font-weight:600; }
+
+  /* INFO BOX */
+  .info-box {
+    padding:12px 16px; border-radius:8px; font-size:13px;
+    background:rgba(110,231,183,.07); border:1px solid rgba(110,231,183,.2);
+    color:var(--accent); margin-bottom:16px; display:flex; gap:8px; align-items:flex-start;
+  }
+  .info-box.warning { background:rgba(251,191,36,.07); border-color:rgba(251,191,36,.2); color:var(--accent3); }
+  .info-box.danger { background:rgba(248,113,113,.07); border-color:rgba(248,113,113,.2); color:var(--red); }
+
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:4px; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">S</div>
+    <div>
+      <div class="logo-text">StoreOS</div>
+      <div class="logo-sub">v2.1.0</div>
+    </div>
+  </div>
+
+  <nav class="nav" id="nav">
+    <!-- items injected by JS based on role -->
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="role-badge">
+      <div class="role-dot" id="role-dot" style="background:var(--accent)"></div>
+      <span id="role-label">Admin</span>
+    </div>
+    <div style="margin-top:10px; font-size:11px; color:var(--muted);">เปลี่ยน Role (Demo)</div>
+    <div style="display:flex;gap:6px;margin-top:6px;">
+      <button class="role-btn active" onclick="switchRole('admin',this)">Admin</button>
+      <button class="role-btn" onclick="switchRole('customer',this)">Customer</button>
+      <button class="role-btn" onclick="switchRole('picker',this)">Picker</button>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-sub" id="topbar-sub">ภาพรวมระบบร้านค้า</div>
+    </div>
+    <div style="margin-left:auto; display:flex; gap:10px;">
+      <button class="btn btn-ghost" onclick="showToast('🔔 ไม่มีการแจ้งเตือนใหม่','info')">🔔</button>
+      <button class="btn btn-primary" id="topbar-action" onclick="openModal('add-product')">+ เพิ่มสินค้า</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ===== DASHBOARD PAGE ===== -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card green">
+          <div class="stat-label">ยอดขายวันนี้</div>
+          <div class="stat-value">฿24,850</div>
+          <div class="stat-change up">↑ 12% จากเมื่อวาน</div>
+        </div>
+        <div class="stat-card amber">
+          <div class="stat-label">รอตรวจสอบบิล</div>
+          <div class="stat-value">7</div>
+          <div class="stat-change">ออเดอร์รอดำเนินการ</div>
+        </div>
+        <div class="stat-card purple">
+          <div class="stat-label">สินค้าทั้งหมด</div>
+          <div class="stat-value">142</div>
+          <div class="stat-change">SKU ในระบบ</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">สต็อกใกล้หมด</div>
+          <div class="stat-value">5</div>
+          <div class="stat-change">รายการต้องเติม</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <div>
+            <div class="section-title">ออเดอร์ล่าสุด</div>
+            <div class="section-sub">อัปเดตเมื่อ 5 นาทีที่แล้ว</div>
+          </div>
+          <button class="btn btn-ghost" onclick="navTo('orders')">ดูทั้งหมด →</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Order ID</th><th>ลูกค้า</th><th>รายการ</th><th>ยอดรวม</th><th>สถานะ</th><th>เวลา</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr onclick="openModal('order-detail')" style="cursor:pointer">
+              <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">#ORD-0842</span></td>
+              <td>สมชาย มีสุข</td>
+              <td>3 รายการ</td>
+              <td class="amount">฿1,250</td>
+              <td><span class="status-pill pill-pending">Pending Verification</span></td>
+              <td><span style="font-size:12px;color:var(--muted)">14:32</span></td>
+            </tr>
+            <tr onclick="openModal('order-detail')" style="cursor:pointer">
+              <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">#ORD-0841</span></td>
+              <td>วันดี รักดี</td>
+              <td>1 รายการ</td>
+              <td class="amount">฿380</td>
+              <td><span class="status-pill pill-processing">Processing</span></td>
+              <td><span style="font-size:12px;color:var(--muted)">13:15</span></td>
+            </tr>
+            <tr onclick="openModal('order-detail')" style="cursor:pointer">
+              <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">#ORD-0840</span></td>
+              <td>นภา สุขใจ</td>
+              <td>5 รายการ</td>
+              <td class="amount">฿2,890</td>
+              <td><span class="status-pill pill-shipped">Shipped</span></td>
+              <td><span style="font-size:12px;color:var(--muted)">11:08</span></td>
+            </tr>
+            <tr onclick="openModal('order-detail')" style="cursor:pointer">
+              <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">#ORD-0839</span></td>
+              <td>ประเสริฐ ดีงาม</td>
+              <td>2 รายการ</td>
+              <td class="amount">฿760</td>
+              <td><span class="status-pill pill-rejected">Payment Rejected</span></td>
+              <td><span style="font-size:12px;color:var(--muted)">09:45</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== ORDERS PAGE ===== -->
+    <div class="page" id="page-orders">
+      <div style="display:flex;gap:12px;margin-bottom:20px;align-items:center;">
+        <div class="search-bar" style="flex:1">
+          <span style="color:var(--muted)">🔍</span>
+          <input type="text" placeholder="ค้นหาออเดอร์ ชื่อลูกค้า...">
+        </div>
+        <select class="form-select" style="width:200px">
+          <option>ทุกสถานะ</option>
+          <option>Pending Verification</option>
+          <option>Paid / To Process</option>
+          <option>Processing</option>
+          <option>Shipped</option>
+          <option>Payment Rejected</option>
+        </select>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <div class="section-title">รายการออเดอร์ทั้งหมด</div>
+          <span class="nav-badge" style="margin-left:0">7 รอตรวจสอบ</span>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Order ID</th><th>ลูกค้า</th><th>วันที่</th><th>ยอดรวม</th><th>สถานะ</th><th>การดำเนินการ</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">#ORD-0842</span></td>
+              <td><div style="font-size:13.5px">สมชาย มีสุข</div><div style="font-size:11px;color:var(--muted)">3 รายการ</div></td>
+              <td><span style="font-size:12px;color:var(--muted)">21 เม.ย. 2568, 14:32</span></td>
+              <td class="amount">฿1,250</td>
+              <td><span class="status-pill pill-pending">Pending Verification</span></td>
+              <td>
+                <div style="display:flex;gap:6px">
+                  <button class="btn btn-ghost" style="padding:5px 10px;font-size:12px" onclick="openModal('verify-payment')">ตรวจสอบบิล</button>
+                  <button class="btn btn-ghost" style="padding:5px 10px;font-size:12px" onclick="openModal('order-detail')">รายละเอียด</button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">#ORD-0841</span></td>
+              <td><div style="font-size:13.5px">วันดี รักดี</div><div style="font-size:11px;color:var(--muted)">1 รายการ</div></td>
+              <td><span style="font-size:12px;color:var(--muted)">21 เม.ย. 2568, 13:15</span></td>
+              <td class="amount">฿380</td>
+              <td><span class="status-pill pill-processing">Processing</span></td>
+              <td>
+                <button class="btn btn-ghost" style="padding:5px 10px;font-size:12px" onclick="openModal('order-detail')">รายละเอียด</button>
+              </td>
+            </tr>
+            <tr>
+              <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">#ORD-0840</span></td>
+              <td><div style="font-size:13.5px">นภา สุขใจ</div><div style="font-size:11px;color:var(--muted)">5 รายการ</div></td>
+              <td><span style="font-size:12px;color:var(--muted)">21 เม.ย. 2568, 11:08</span></td>
+              <td class="amount">฿2,890</td>
+              <td><span class="status-pill pill-shipped">Shipped</span></td>
+              <td>
+                <button class="btn btn-ghost" style="padding:5px 10px;font-size:12px" onclick="openModal('order-detail')">รายละเอียด</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== PRODUCTS PAGE ===== -->
+    <div class="page" id="page-products">
+      <div style="display:flex;gap:12px;margin-bottom:20px;">
+        <div class="search-bar" style="flex:1">
+          <span style="color:var(--muted)">🔍</span>
+          <input type="text" placeholder="ค้นหาสินค้า...">
+        </div>
+        <button class="btn btn-primary" onclick="openModal('add-product')">+ เพิ่มสินค้า</button>
+      </div>
+
+      <div class="product-grid">
+        <div class="product-card" onclick="openModal('edit-product')">
+          <div class="product-img">🧴</div>
+          <div class="product-name">ครีมบำรุงผิว SPF50</div>
+          <div class="product-price">฿350</div>
+          <div class="product-stock">สต็อก: 48 ชิ้น</div>
+        </div>
+        <div class="product-card" onclick="openModal('edit-product')">
+          <div class="product-img">👟</div>
+          <div class="product-name">รองเท้าวิ่ง ProRun</div>
+          <div class="product-price">฿1,890</div>
+          <div class="product-stock">สต็อก: 12 ชิ้น</div>
+        </div>
+        <div class="product-card" onclick="openModal('edit-product')">
+          <div class="product-img">🎧</div>
+          <div class="product-name">หูฟัง Wireless X3</div>
+          <div class="product-price">฿2,490</div>
+          <div class="product-stock stock-low">⚠ สต็อก: 3 ชิ้น (ใกล้หมด)</div>
+        </div>
+        <div class="product-card" onclick="openModal('edit-product')">
+          <div class="product-img">📱</div>
+          <div class="product-name">เคสโทรศัพท์ Clear</div>
+          <div class="product-price">฿129</div>
+          <div class="product-stock">สต็อก: 200 ชิ้น</div>
+        </div>
+        <div class="product-card" onclick="openModal('edit-product')">
+          <div class="product-img">☕</div>
+          <div class="product-name">กาแฟดริป Premium</div>
+          <div class="product-price">฿280</div>
+          <div class="product-stock stock-low">⚠ สต็อก: 2 ชิ้น (ใกล้หมด)</div>
+        </div>
+        <div class="product-card" onclick="openModal('edit-product')">
+          <div class="product-img">🌿</div>
+          <div class="product-name">วิตามิน C 1000mg</div>
+          <div class="product-price">฿195</div>
+          <div class="product-stock">สต็อก: 75 ชิ้น</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CART PAGE (Customer) ===== -->
+    <div class="page" id="page-cart">
+      <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;">
+        <div>
+          <div class="section">
+            <div class="section-head">
+              <div class="section-title">ตะกร้าสินค้า</div>
+              <div class="section-sub">3 รายการ</div>
+            </div>
+            <div style="padding:0 20px;">
+              <div class="cart-item">
+                <div class="cart-emoji">🧴</div>
+                <div style="flex:1">
+                  <div class="cart-name">ครีมบำรุงผิว SPF50</div>
+                  <div style="font-size:12px;color:var(--muted)">฿350 / ชิ้น</div>
+                </div>
+                <div class="qty-ctrl">
+                  <button class="qty-btn">−</button>
+                  <span class="qty-val">2</span>
+                  <button class="qty-btn">+</button>
+                </div>
+                <div class="cart-price" style="min-width:70px;text-align:right">฿700</div>
+                <button style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px 8px">×</button>
+              </div>
+              <div class="cart-item">
+                <div class="cart-emoji">🎧</div>
+                <div style="flex:1">
+                  <div class="cart-name">หูฟัง Wireless X3</div>
+                  <div style="font-size:12px;color:var(--muted)">฿2,490 / ชิ้น</div>
+                </div>
+                <div class="qty-ctrl">
+                  <button class="qty-btn">−</button>
+                  <span class="qty-val">1</span>
+                  <button class="qty-btn">+</button>
+                </div>
+                <div class="cart-price" style="min-width:70px;text-align:right">฿2,490</div>
+                <button style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px 8px">×</button>
+              </div>
+              <div class="cart-item">
+                <div class="cart-emoji">☕</div>
+                <div style="flex:1">
+                  <div class="cart-name">กาแฟดริป Premium</div>
+                  <div style="font-size:12px;color:var(--muted)">฿280 / ชิ้น</div>
+                </div>
+                <div class="qty-ctrl">
+                  <button class="qty-btn">−</button>
+                  <span class="qty-val">1</span>
+                  <button class="qty-btn">+</button>
+                </div>
+                <div class="cart-price" style="min-width:70px;text-align:right">฿280</div>
+                <button style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px 8px">×</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="section" style="padding:20px;">
+            <div class="section-title" style="margin-bottom:16px">สรุปคำสั่งซื้อ</div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:10px;font-size:13.5px">
+              <span style="color:var(--muted)">ราคาสินค้า</span><span>฿3,470</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:10px;font-size:13.5px">
+              <span style="color:var(--muted)">ค่าจัดส่ง</span><span>฿50</span>
+            </div>
+            <div style="border-top:1px solid var(--border);margin:14px 0;"></div>
+            <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:600">
+              <span>รวมทั้งสิ้น</span>
+              <span style="color:var(--accent);font-family:var(--mono)">฿3,520</span>
+            </div>
+            <button class="btn btn-primary" style="width:100%;margin-top:20px;justify-content:center;padding:12px" onclick="openModal('upload-slip')">
+              ดำเนินการชำระเงิน →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MY ORDERS PAGE (Customer) ===== -->
+    <div class="page" id="page-myorders">
+      <div class="section">
+        <div class="section-head"><div class="section-title">ออเดอร์ของฉัน</div></div>
+        <table>
+          <thead>
+            <tr><th>Order ID</th><th>วันที่สั่ง</th><th>รายการ</th><th>ยอดรวม</th><th>สถานะ</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">#ORD-0842</span></td>
+              <td><span style="font-size:12px;color:var(--muted)">21 เม.ย. 2568</span></td>
+              <td>ครีมบำรุง, หูฟัง +1</td>
+              <td class="amount">฿3,520</td>
+              <td><span class="status-pill pill-pending">Pending Verification</span></td>
+              <td><button class="btn btn-ghost" style="padding:5px 12px;font-size:12px" onclick="openModal('order-detail')">ติดตาม</button></td>
+            </tr>
+            <tr>
+              <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">#ORD-0815</span></td>
+              <td><span style="font-size:12px;color:var(--muted)">15 เม.ย. 2568</span></td>
+              <td>รองเท้าวิ่ง ProRun</td>
+              <td class="amount">฿1,940</td>
+              <td><span class="status-pill pill-shipped">Shipped</span></td>
+              <td><button class="btn btn-ghost" style="padding:5px 12px;font-size:12px" onclick="openModal('order-detail')">ติดตาม</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== PICKER PAGE ===== -->
+    <div class="page" id="page-picking">
+      <div class="info-box">
+        <span>📋</span>
+        <span>แสดงเฉพาะออเดอร์ที่ <strong>Admin อนุมัติแล้ว</strong> (สถานะ Paid / To Process)</span>
+      </div>
+      <div class="section">
+        <div class="section-head">
+          <div class="section-title">รายการจัดของ</div>
+          <span class="nav-badge" style="margin-left:0">4 รออยู่</span>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Order ID</th><th>ลูกค้า</th><th>รายการสินค้า</th><th>สถานะ</th><th>การดำเนินการ</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">#ORD-0838</span></td>
+              <td>มานี รักเรียน</td>
+              <td>
+                <div style="font-size:12.5px">🧴 ครีมบำรุง ×2</div>
+                <div style="font-size:12.5px">🌿 วิตามิน C ×1</div>
+              </td>
+              <td><span class="status-pill pill-paid">Paid / To Process</span></td>
+              <td>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                  <button class="btn btn-ghost" style="padding:5px 10px;font-size:12px" onclick="openModal('picking-list')">ใบจัดของ 🖨</button>
+                  <button class="btn btn-primary" style="padding:5px 10px;font-size:12px" onclick="openModal('add-tracking')">ใส่ Tracking</button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">#ORD-0837</span></td>
+              <td>พิมพ์ ใจดี</td>
+              <td>
+                <div style="font-size:12.5px">🎧 หูฟัง Wireless ×1</div>
+              </td>
+              <td><span class="status-pill pill-processing">Processing</span></td>
+              <td>
+                <button class="btn btn-primary" style="padding:5px 10px;font-size:12px" onclick="openModal('add-tracking')">ใส่ Tracking</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+
+<!-- ===== MODALS ===== -->
+
+<!-- Order Detail Modal -->
+<div class="overlay" id="modal-order-detail" onclick="if(event.target===this)closeModal('order-detail')">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title">ออเดอร์ #ORD-0842</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">สมชาย มีสุข · 21 เม.ย. 2568, 14:32</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('order-detail')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="order-timeline">
+        <div class="timeline-item">
+          <div class="timeline-dot done">✓</div>
+          <div class="timeline-info">
+            <div class="timeline-title">สั่งซื้อสำเร็จ</div>
+            <div class="timeline-time">21 เม.ย. 2568, 14:32</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot active">⏳</div>
+          <div class="timeline-info">
+            <div class="timeline-title">รอตรวจสอบการชำระเงิน</div>
+            <div class="timeline-time">21 เม.ย. 2568, 14:35</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot">3</div>
+          <div class="timeline-info">
+            <div class="timeline-title" style="color:var(--muted)">อนุมัติออเดอร์</div>
+            <div class="timeline-time">รอดำเนินการ</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot">4</div>
+          <div class="timeline-info">
+            <div class="timeline-title" style="color:var(--muted)">กำลังจัดส่ง</div>
+            <div class="timeline-time">รอดำเนินการ</div>
+          </div>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
+        <div style="font-size:13px;font-weight:500;margin-bottom:12px">รายการสินค้า</div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border)">
+          <span>🧴 ครีมบำรุงผิว SPF50 ×2</span><span class="amount">฿700</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border)">
+          <span>🎧 หูฟัง Wireless X3 ×1</span><span class="amount">฿2,490</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border)">
+          <span style="color:var(--muted)">ค่าจัดส่ง</span><span class="amount">฿50</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:600;padding:10px 0">
+          <span>รวมทั้งสิ้น</span><span class="amount" style="color:var(--accent)">฿3,240</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('order-detail')">ปิด</button>
+      <button class="btn btn-primary" onclick="closeModal('order-detail');openModal('verify-payment')">ตรวจสอบการชำระเงิน</button>
+    </div>
+  </div>
+</div>
+
+<!-- Verify Payment Modal -->
+<div class="overlay" id="modal-verify-payment" onclick="if(event.target===this)closeModal('verify-payment')">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">ตรวจสอบการชำระเงิน #ORD-0842</div>
+      <button class="modal-close" onclick="closeModal('verify-payment')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="info-box warning">
+        <span>⚠</span>
+        <span>ยอดที่ต้องชำระ: <strong>฿3,240</strong> — กรุณาตรวจสอบให้ตรงกับ Slip ที่แนบมา</span>
+      </div>
+      <div class="slip-preview">
+        <div class="slip-img-placeholder">
+          <div class="slip-icon">🧾</div>
+          <div class="slip-text">หลักฐานการโอนเงิน<br><span style="font-family:var(--mono);font-size:13px;color:var(--accent)">slip_ord0842.jpg</span></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left">
+          <div style="font-size:12px;color:var(--muted)">ธนาคาร</div><div style="font-size:12px;font-family:var(--mono)">กสิกรไทย</div>
+          <div style="font-size:12px;color:var(--muted)">วันที่โอน</div><div style="font-size:12px;font-family:var(--mono)">21/04/68 14:35</div>
+          <div style="font-size:12px;color:var(--muted)">ยอดเงิน</div><div style="font-size:12px;font-family:var(--mono);color:var(--accent)">฿3,240.00</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">หมายเหตุ (ถ้ามี)</label>
+        <input class="form-input" type="text" placeholder="เช่น ยอดถูกต้อง / ยอดไม่ตรง">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" onclick="closeModal('verify-payment');showToast('❌ ปฏิเสธการชำระเงิน — แจ้งลูกค้าแนบใหม่','error')">ปฏิเสธ</button>
+      <button class="btn btn-primary" onclick="closeModal('verify-payment');showToast('✅ อนุมัติการชำระเงินสำเร็จ','success')">✓ อนุมัติ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Upload Slip Modal -->
+<div class="overlay" id="modal-upload-slip" onclick="if(event.target===this)closeModal('upload-slip')">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">แนบหลักฐานการชำระเงิน</div>
+      <button class="modal-close" onclick="closeModal('upload-slip')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="info-box">
+        <span>💳</span>
+        <span>โอนเงินมาที่บัญชี <strong>กสิกรไทย 123-4-56789-0</strong> (ร้านค้า ABC) ยอด <strong style="color:var(--accent)">฿3,520</strong></span>
+      </div>
+      <div style="border:2px dashed var(--border2);border-radius:10px;padding:32px;text-align:center;cursor:pointer;margin-bottom:16px" onclick="showToast('📁 เลือกไฟล์...','info')">
+        <div style="font-size:36px;margin-bottom:10px">📷</div>
+        <div style="font-size:13.5px;font-weight:500;margin-bottom:4px">อัปโหลด Slip / หลักฐานการโอน</div>
+        <div style="font-size:12px;color:var(--muted)">คลิกเพื่อเลือกไฟล์ หรือลากวางที่นี่ (JPG, PNG, PDF)</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">หมายเหตุเพิ่มเติม</label>
+        <input class="form-input" type="text" placeholder="เช่น โอนจากชื่อ...">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('upload-slip')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="closeModal('upload-slip');showToast('✅ ส่งหลักฐานการชำระเงินสำเร็จ','success')">ส่งหลักฐาน</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Product Modal -->
+<div class="overlay" id="modal-add-product" onclick="if(event.target===this)closeModal('add-product')">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">เพิ่มสินค้าใหม่</div>
+      <button class="modal-close" onclick="closeModal('add-product')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">ชื่อสินค้า</label>
+        <input class="form-input" type="text" placeholder="ชื่อสินค้า">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">ราคา (บาท)</label>
+          <input class="form-input" type="number" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">จำนวนสต็อก</label>
+          <input class="form-input" type="number" placeholder="0">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">หมวดหมู่</label>
+        <select class="form-select">
+          <option>เลือกหมวดหมู่</option>
+          <option>ความงาม</option>
+          <option>อาหาร / เครื่องดื่ม</option>
+          <option>เสื้อผ้า</option>
+          <option>อิเล็กทรอนิกส์</option>
+          <option>สุขภาพ</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">รูปสินค้า</label>
+        <div style="border:2px dashed var(--border2);border-radius:8px;padding:24px;text-align:center;cursor:pointer" onclick="showToast('📁 เลือกรูปภาพ...','info')">
+          <div style="font-size:28px;margin-bottom:6px">🖼</div>
+          <div style="font-size:12px;color:var(--muted)">คลิกเพื่ออัปโหลดรูป</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('add-product')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="closeModal('add-product');showToast('✅ เพิ่มสินค้าสำเร็จ','success')">+ เพิ่มสินค้า</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Product Modal -->
+<div class="overlay" id="modal-edit-product" onclick="if(event.target===this)closeModal('edit-product')">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">แก้ไขสินค้า</div>
+      <button class="modal-close" onclick="closeModal('edit-product')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">ชื่อสินค้า</label>
+        <input class="form-input" type="text" value="หูฟัง Wireless X3">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">ราคา (บาท)</label>
+          <input class="form-input" type="number" value="2490">
+        </div>
+        <div class="form-group">
+          <label class="form-label">จำนวนสต็อก</label>
+          <input class="form-input" type="number" value="3">
+        </div>
+      </div>
+      <div class="info-box warning">
+        <span>⚠</span>
+        <span>สต็อกต่ำ — ควรเติมสินค้า</span>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" onclick="closeModal('edit-product');showToast('🗑 ลบสินค้าแล้ว','error')">ลบสินค้า</button>
+      <button class="btn btn-ghost" onclick="closeModal('edit-product')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="closeModal('edit-product');showToast('✅ บันทึกการแก้ไขสำเร็จ','success')">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Tracking Modal -->
+<div class="overlay" id="modal-add-tracking" onclick="if(event.target===this)closeModal('add-tracking')">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">ใส่เลข Tracking #ORD-0838</div>
+      <button class="modal-close" onclick="closeModal('add-tracking')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">บริษัทขนส่ง</label>
+        <select class="form-select">
+          <option>Flash Express</option>
+          <option>Kerry Express</option>
+          <option>J&T Express</option>
+          <option>Thailand Post</option>
+          <option>SCG Express</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">เลขพัสดุ (Tracking Number)</label>
+        <input class="form-input" type="text" placeholder="TH1234567890AB">
+      </div>
+      <div class="form-group">
+        <label class="form-label">วันที่จัดส่ง</label>
+        <input class="form-input" type="date" value="2025-04-21">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('add-tracking')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="closeModal('add-tracking');showToast('📦 อัปเดต Tracking สำเร็จ — สถานะ: Shipped','success')">ยืนยันการจัดส่ง</button>
+    </div>
+  </div>
+</div>
+
+<!-- Picking List Modal -->
+<div class="overlay" id="modal-picking-list" onclick="if(event.target===this)closeModal('picking-list')">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">ใบจัดของ #ORD-0838</div>
+      <button class="modal-close" onclick="closeModal('picking-list')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="border:1px solid var(--border2);border-radius:10px;padding:20px;background:var(--bg3)">
+        <div style="display:flex;justify-content:space-between;margin-bottom:16px">
+          <div>
+            <div style="font-size:13px;font-weight:600">StoreOS — ใบจัดของ</div>
+            <div style="font-size:11px;color:var(--muted);font-family:var(--mono)">#ORD-0838 · 21/04/68</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:11px;color:var(--muted)">ลูกค้า</div>
+            <div style="font-size:13px;font-weight:500">มานี รักเรียน</div>
+          </div>
+        </div>
+        <table style="font-size:12.5px">
+          <thead><tr><th style="padding:8px 10px">สินค้า</th><th style="padding:8px 10px">จำนวน</th><th style="padding:8px 10px">ตำแหน่ง</th><th style="padding:8px 10px">✓</th></tr></thead>
+          <tbody>
+            <tr><td style="padding:8px 10px">🧴 ครีมบำรุงผิว SPF50</td><td style="padding:8px 10px;font-family:var(--mono)">×2</td><td style="padding:8px 10px;color:var(--muted)">ชั้น A-3</td><td style="padding:8px 10px"><input type="checkbox"></td></tr>
+            <tr><td style="padding:8px 10px">🌿 วิตามิน C 1000mg</td><td style="padding:8px 10px;font-family:var(--mono)">×1</td><td style="padding:8px 10px;color:var(--muted)">ชั้น B-1</td><td style="padding:8px 10px"><input type="checkbox"></td></tr>
+          </tbody>
+        </table>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);font-size:12px">
+          <div style="font-weight:500;margin-bottom:6px">ที่อยู่จัดส่ง:</div>
+          <div style="color:var(--muted)">มานี รักเรียน · 089-123-4567<br>123/45 ถ.พหลโยธิน ลาดยาว จตุจักร กรุงเทพฯ 10900</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('picking-list')">ปิด</button>
+      <button class="btn btn-primary" onclick="showToast('🖨 กำลังพิมพ์ใบจัดของ...','info')">🖨 พิมพ์</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+  const ROLES = {
+    admin: {
+      label: 'Admin', color: 'var(--accent2)',
+      nav: [
+        { section: 'ภาพรวม' },
+        { id: 'dashboard', icon: '📊', label: 'Dashboard', active: true },
+        { id: 'orders', icon: '📦', label: 'ออเดอร์', badge: '7' },
+        { section: 'จัดการ' },
+        { id: 'products', icon: '🛍', label: 'สินค้า' },
+      ],
+      topAction: { label: '+ เพิ่มสินค้า', modal: 'add-product' }
+    },
+    customer: {
+      label: 'Customer', color: 'var(--accent)',
+      nav: [
+        { section: 'ร้านค้า' },
+        { id: 'products', icon: '🛍', label: 'สินค้าทั้งหมด', active: true },
+        { id: 'cart', icon: '🛒', label: 'ตะกร้าสินค้า', badge: '3' },
+        { section: 'บัญชีของฉัน' },
+        { id: 'myorders', icon: '📋', label: 'ออเดอร์ของฉัน' },
+      ],
+      topAction: { label: '🛒 ตะกร้า (3)', modal: 'none', page: 'cart' }
+    },
+    picker: {
+      label: 'Picker / Packer', color: 'var(--accent3)',
+      nav: [
+        { section: 'งานของฉัน' },
+        { id: 'picking', icon: '📦', label: 'รายการจัดของ', badge: '4', active: true },
+        { id: 'orders', icon: '📋', label: 'ออเดอร์ทั้งหมด' },
+      ],
+      topAction: { label: '🖨 พิมพ์ใบงาน', modal: 'picking-list' }
+    }
+  };
+
+  let currentRole = 'admin';
+  let currentPage = 'dashboard';
+
+  const PAGE_TITLES = {
+    dashboard: ['Dashboard', 'ภาพรวมระบบร้านค้า'],
+    orders: ['ออเดอร์', 'จัดการรายการสั่งซื้อ'],
+    products: ['สินค้า', 'จัดการสต็อกสินค้า'],
+    cart: ['ตะกร้าสินค้า', 'รายการสินค้าที่เลือก'],
+    myorders: ['ออเดอร์ของฉัน', 'ติดตามสถานะการสั่งซื้อ'],
+    picking: ['รายการจัดของ', 'ออเดอร์ที่อนุมัติแล้ว']
+  };
+
+  function renderNav(role) {
+    const cfg = ROLES[role];
+    const nav = document.getElementById('nav');
+    nav.innerHTML = '';
+    cfg.nav.forEach(item => {
+      if (item.section) {
+        nav.innerHTML += `<div class="nav-section">${item.section}</div>`;
+      } else {
+        nav.innerHTML += `
+          <div class="nav-item ${item.active ? 'active' : ''}" id="nav-${item.id}" onclick="navTo('${item.id}')">
+            <span class="nav-icon">${item.icon}</span>
+            ${item.label}
+            ${item.badge ? `<span class="nav-badge">${item.badge}</span>` : ''}
+          </div>`;
+      }
+    });
+    document.getElementById('role-label').textContent = cfg.label;
+    document.getElementById('role-dot').style.background = cfg.color;
+    // topbar action
+    const btn = document.getElementById('topbar-action');
+    btn.textContent = cfg.topAction.label;
+    btn.onclick = cfg.topAction.page
+      ? () => navTo(cfg.topAction.page)
+      : () => openModal(cfg.topAction.modal);
+  }
+
+  function switchRole(role, btn) {
+    currentRole = role;
+    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const firstPage = ROLES[role].nav.find(i => i.id)?.id || 'dashboard';
+    renderNav(role);
+    navTo(firstPage);
+  }
+
+  function navTo(pageId) {
+    currentPage = pageId;
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const pg = document.getElementById('page-' + pageId);
+    if (pg) pg.classList.add('active');
+
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const ni = document.getElementById('nav-' + pageId);
+    if (ni) ni.classList.add('active');
+
+    const titles = PAGE_TITLES[pageId] || [pageId, ''];
+    document.getElementById('topbar-title').textContent = titles[0];
+    document.getElementById('topbar-sub').textContent = titles[1];
+  }
+
+  function openModal(id) {
+    document.getElementById('modal-' + id)?.classList.add('show');
+  }
+  function closeModal(id) {
+    document.getElementById('modal-' + id)?.classList.remove('show');
+  }
+
+  let toastTimer = null;
+  function showToast(msg, type = 'info') {
+    const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+    const c = document.getElementById('toast-container');
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = `<span class="toast-icon">${icons[type]||'ℹ️'}</span>${msg}`;
+    c.appendChild(t);
+    setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(), 300); }, 3000);
+  }
+
+  // Init
+  renderNav('admin');
+  navTo('dashboard');
+</script>
+</body>
+</html>
