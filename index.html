@@ -3,1110 +3,1043 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Store — ระบบจัดการร้านค้า</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>StoreOS — ระบบคลังสินค้า</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0f0f11;
-    --bg2: #16161a;
-    --bg3: #1e1e24;
-    --border: rgba(255,255,255,0.08);
-    --border2: rgba(255,255,255,0.14);
-    --text: #e8e8ec;
-    --muted: #7a7a8c;
-    --accent: #6ee7b7;
-    --accent2: #a78bfa;
-    --accent3: #fbbf24;
-    --red: #f87171;
-    --blue: #60a5fa;
-    --font: 'IBM Plex Sans Thai', sans-serif;
-    --mono: 'IBM Plex Mono', monospace;
-  }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font-family:var(--font); min-height:100vh; display:flex; }
+:root {
+  --bg:       #f5f5f0;
+  --surface:  #ffffff;
+  --surface2: #fafaf8;
+  --border:   #e8e6e0;
+  --border2:  #d4d0c8;
+  --text:     #1a1a18;
+  --sub:      #6b6b60;
+  --hint:     #a8a89a;
+  --accent:   #2d6a4f;
+  --accent-l: #e8f3ee;
+  --accent-t: rgba(45,106,79,.12);
+  --warn:     #92400e;
+  --warn-l:   #fef3c7;
+  --err:      #991b1b;
+  --err-l:    #fee2e2;
+  --blue:     #1e40af;
+  --blue-l:   #dbeafe;
+  --purple:   #5b21b6;
+  --purple-l: #ede9fe;
+  --radius:   10px;
+  --radius-lg:16px;
+  --shadow:   0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
+  --font-th:  'Noto Sans Thai', sans-serif;
+  --font-en:  'Figtree', sans-serif;
+}
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:var(--font-th); background:var(--bg); color:var(--text); min-height:100vh; font-size:14px; line-height:1.6; }
+button, input, select, textarea { font-family:var(--font-th); }
 
-  /* SIDEBAR */
-  .sidebar {
-    width: 220px; min-width:220px; background:var(--bg2); border-right:1px solid var(--border);
-    display:flex; flex-direction:column; padding:0;
-  }
-  .logo {
-    padding: 22px 20px 18px;
-    border-bottom: 1px solid var(--border);
-    display:flex; align-items:center; gap:10px;
-  }
-  .logo-icon {
-    width:32px; height:32px; background:var(--accent); border-radius:8px;
-    display:flex; align-items:center; justify-content:center;
-    font-family:var(--mono); font-size:14px; font-weight:500; color:#0f0f11;
-  }
-  .logo-text { font-size:15px; font-weight:600; letter-spacing:.02em; }
-  .logo-sub { font-size:10px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; }
+/* ── TYPOGRAPHY ── */
+.t-xs  { font-size:11px; }
+.t-sm  { font-size:12px; }
+.t-md  { font-size:13.5px; }
+.t-lg  { font-size:16px; font-weight:500; }
+.t-xl  { font-size:20px; font-weight:600; }
+.muted { color:var(--sub); }
+.hint  { color:var(--hint); }
+.mono  { font-family:var(--font-en); }
 
-  .nav { padding:12px 0; flex:1; }
-  .nav-section { padding:8px 16px 4px; font-size:10px; color:var(--muted); letter-spacing:.1em; text-transform:uppercase; }
-  .nav-item {
-    display:flex; align-items:center; gap:10px; padding:9px 16px;
-    font-size:13.5px; color:var(--muted); cursor:pointer; border-left:2px solid transparent;
-    transition: all .15s; user-select:none;
-  }
-  .nav-item:hover { color:var(--text); background:rgba(255,255,255,.04); }
-  .nav-item.active { color:var(--accent); border-left-color:var(--accent); background:rgba(110,231,183,.06); }
-  .nav-icon { font-size:15px; width:18px; text-align:center; }
-  .nav-badge {
-    margin-left:auto; background:var(--accent3); color:#0f0f11;
-    font-size:10px; font-weight:600; padding:1px 6px; border-radius:20px; font-family:var(--mono);
-  }
+/* ── LAYOUT ── */
+#login-screen { position:fixed; inset:0; background:var(--bg); display:flex; align-items:center; justify-content:center; z-index:999; transition:opacity .35s ease; }
+#login-screen.out { opacity:0; pointer-events:none; }
+#app { display:none; height:100vh; flex-direction:row; }
+#app.show { display:flex; }
 
-  .sidebar-footer { padding:16px; border-top:1px solid var(--border); }
-  .role-badge {
-    display:inline-flex; align-items:center; gap:6px; font-size:11px;
-    padding:5px 10px; border-radius:6px; border:1px solid var(--border2);
-    color:var(--muted); font-family:var(--mono);
-  }
-  .role-dot { width:6px; height:6px; border-radius:50%; }
+/* ── SIDEBAR ── */
+.sidebar {
+  width:220px; flex-shrink:0; background:var(--surface);
+  border-right:1px solid var(--border); display:flex; flex-direction:column;
+  height:100vh; position:sticky; top:0;
+}
+.sidebar-logo {
+  padding:20px 20px 16px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:10px;
+}
+.logo-mark {
+  width:32px; height:32px; background:var(--accent); border-radius:8px;
+  display:grid; place-items:center;
+}
+.logo-mark svg { width:16px; height:16px; fill:white; }
+.logo-name { font-family:var(--font-en); font-weight:600; font-size:15px; color:var(--text); letter-spacing:-.02em; }
+.logo-tagline { font-size:10px; color:var(--hint); margin-top:1px; }
 
-  /* MAIN */
-  .main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.nav-section { padding:16px 16px 6px; font-size:10px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--hint); }
+.nav-item {
+  display:flex; align-items:center; gap:9px; margin:1px 8px;
+  padding:8px 10px; border-radius:var(--radius); cursor:pointer;
+  color:var(--sub); font-size:13.5px; transition:all .12s; user-select:none;
+  border:none; background:none; width:calc(100% - 16px); text-align:left;
+}
+.nav-item:hover { background:var(--bg); color:var(--text); }
+.nav-item.active { background:var(--accent-l); color:var(--accent); font-weight:500; }
+.nav-item .ni { width:16px; height:16px; flex-shrink:0; opacity:.7; }
+.nav-item.active .ni { opacity:1; }
+.nav-badge { margin-left:auto; background:var(--warn); color:#fff; font-size:10px; font-family:var(--font-en); font-weight:600; padding:1px 6px; border-radius:20px; }
 
-  .topbar {
-    padding:16px 28px; border-bottom:1px solid var(--border);
-    display:flex; align-items:center; gap:16px; background:var(--bg2);
-  }
-  .topbar-title { font-size:16px; font-weight:600; flex:1; }
-  .topbar-sub { font-size:12px; color:var(--muted); margin-top:1px; }
+.sidebar-footer { margin-top:auto; padding:16px; border-top:1px solid var(--border); }
+.user-chip {
+  display:flex; align-items:center; gap:8px; padding:8px 10px;
+  background:var(--bg); border-radius:var(--radius); margin-bottom:10px;
+}
+.user-avatar { width:28px; height:28px; border-radius:50%; background:var(--accent); color:#fff; display:grid; place-items:center; font-size:11px; font-weight:600; flex-shrink:0; }
+.user-name  { font-size:12.5px; font-weight:500; line-height:1.3; }
+.user-role  { font-size:10.5px; color:var(--hint); }
+.btn-logout {
+  width:100%; padding:7px 12px; background:none; border:1px solid var(--border2);
+  border-radius:var(--radius); color:var(--sub); font-size:12.5px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:6px; transition:all .12s;
+}
+.btn-logout:hover { border-color:var(--err); color:var(--err); background:var(--err-l); }
 
-  .btn {
-    display:inline-flex; align-items:center; gap:7px; padding:8px 16px;
-    font-size:13px; font-family:var(--font); border-radius:8px; cursor:pointer;
-    border:none; transition:all .15s; font-weight:500;
-  }
-  .btn-primary { background:var(--accent); color:#0f0f11; }
-  .btn-primary:hover { background:#4ade80; transform:translateY(-1px); }
-  .btn-ghost { background:transparent; color:var(--muted); border:1px solid var(--border2); }
-  .btn-ghost:hover { color:var(--text); border-color:var(--border2); background:rgba(255,255,255,.05); }
-  .btn-danger { background:rgba(248,113,113,.12); color:var(--red); border:1px solid rgba(248,113,113,.25); }
-  .btn-danger:hover { background:rgba(248,113,113,.22); }
+/* ── MAIN ── */
+.main { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; }
+.topbar {
+  background:var(--surface); border-bottom:1px solid var(--border);
+  padding:0 28px; height:56px; display:flex; align-items:center; gap:12px; flex-shrink:0;
+}
+.topbar-title { font-size:15px; font-weight:600; }
+.topbar-bread { font-size:12px; color:var(--hint); margin-left:2px; }
+.spacer { flex:1; }
 
-  .content { flex:1; overflow-y:auto; padding:28px; }
+.content { flex:1; overflow-y:auto; padding:24px 28px; background:var(--bg); }
+.page { display:none; }
+.page.active { display:block; animation:fadeUp .2s ease both; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 
-  /* STATS GRID */
-  .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px; }
-  .stat-card {
-    background:var(--bg2); border:1px solid var(--border); border-radius:12px;
-    padding:18px 20px; position:relative; overflow:hidden;
-  }
-  .stat-card::before {
-    content:''; position:absolute; top:0; left:0; right:0; height:2px;
-  }
-  .stat-card.green::before { background:var(--accent); }
-  .stat-card.purple::before { background:var(--accent2); }
-  .stat-card.amber::before { background:var(--accent3); }
-  .stat-card.red::before { background:var(--red); }
-  .stat-label { font-size:11px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; margin-bottom:10px; }
-  .stat-value { font-size:26px; font-weight:600; font-family:var(--mono); letter-spacing:-.02em; }
-  .stat-change { font-size:11px; margin-top:6px; color:var(--muted); }
-  .stat-change.up { color:var(--accent); }
+/* ── BUTTONS ── */
+.btn { display:inline-flex; align-items:center; gap:7px; padding:8px 16px; font-size:13.5px; border-radius:var(--radius); border:none; cursor:pointer; transition:all .12s; font-family:var(--font-th); font-weight:500; white-space:nowrap; }
+.btn-primary { background:var(--accent); color:#fff; }
+.btn-primary:hover { background:#235c40; }
+.btn-sm { padding:5px 12px; font-size:12.5px; }
+.btn-outline { background:var(--surface); color:var(--text); border:1px solid var(--border2); }
+.btn-outline:hover { background:var(--bg); border-color:var(--border2); }
+.btn-ghost { background:transparent; color:var(--sub); }
+.btn-ghost:hover { background:var(--bg); color:var(--text); }
+.btn-danger { background:var(--err-l); color:var(--err); border:1px solid #fecaca; }
+.btn-danger:hover { background:#fecaca; }
+.btn-warn { background:var(--warn-l); color:var(--warn); border:1px solid #fde68a; }
 
-  /* TABLES */
-  .section { background:var(--bg2); border:1px solid var(--border); border-radius:12px; margin-bottom:20px; }
-  .section-head {
-    padding:16px 20px; border-bottom:1px solid var(--border);
-    display:flex; align-items:center; gap:12px;
-  }
-  .section-title { font-size:14px; font-weight:600; flex:1; }
-  .section-sub { font-size:12px; color:var(--muted); }
+/* ── STAT CARDS ── */
+.stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:24px; }
+.stat {
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);
+  padding:18px 20px; box-shadow:var(--shadow);
+}
+.stat-label { font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--hint); margin-bottom:10px; }
+.stat-val { font-family:var(--font-en); font-size:26px; font-weight:600; color:var(--text); letter-spacing:-.03em; line-height:1; }
+.stat-note { font-size:11.5px; color:var(--hint); margin-top:7px; }
+.stat-note.up { color:var(--accent); }
+.stat-note.dn { color:var(--err); }
+.stat-icon { width:34px; height:34px; border-radius:9px; display:grid; place-items:center; margin-bottom:12px; }
 
-  table { width:100%; border-collapse:collapse; }
-  th {
-    text-align:left; font-size:11px; color:var(--muted); letter-spacing:.07em;
-    text-transform:uppercase; padding:12px 20px; border-bottom:1px solid var(--border);
-    font-weight:500; background:var(--bg3);
-  }
-  td { padding:13px 20px; font-size:13.5px; border-bottom:1px solid var(--border); vertical-align:middle; }
-  tr:last-child td { border-bottom:none; }
-  tr:hover td { background:rgba(255,255,255,.025); }
+/* ── CARDS ── */
+.card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow); margin-bottom:18px; overflow:hidden; }
+.card-head { padding:16px 20px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border); }
+.card-title { font-size:14px; font-weight:600; }
+.card-sub { font-size:12px; color:var(--hint); margin-top:1px; }
+.card-body { padding:20px; }
 
-  .status-pill {
-    display:inline-flex; align-items:center; gap:5px; padding:3px 10px;
-    border-radius:20px; font-size:11.5px; font-weight:500; font-family:var(--mono);
-  }
-  .status-pill::before { content:''; width:5px; height:5px; border-radius:50%; }
-  .pill-pending { background:rgba(251,191,36,.1); color:var(--accent3); border:1px solid rgba(251,191,36,.25); }
-  .pill-pending::before { background:var(--accent3); }
-  .pill-paid { background:rgba(110,231,183,.1); color:var(--accent); border:1px solid rgba(110,231,183,.25); }
-  .pill-paid::before { background:var(--accent); }
-  .pill-processing { background:rgba(96,165,250,.1); color:var(--blue); border:1px solid rgba(96,165,250,.25); }
-  .pill-processing::before { background:var(--blue); }
-  .pill-shipped { background:rgba(167,139,250,.1); color:var(--accent2); border:1px solid rgba(167,139,250,.25); }
-  .pill-shipped::before { background:var(--accent2); }
-  .pill-rejected { background:rgba(248,113,113,.1); color:var(--red); border:1px solid rgba(248,113,113,.25); }
-  .pill-rejected::before { background:var(--red); }
+/* ── TABLE ── */
+.tbl { width:100%; border-collapse:collapse; }
+.tbl th { text-align:left; font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--hint); padding:10px 20px; border-bottom:1px solid var(--border); background:var(--surface2); }
+.tbl td { padding:13px 20px; font-size:13.5px; border-bottom:1px solid var(--border); vertical-align:middle; }
+.tbl tr:last-child td { border-bottom:none; }
+.tbl tbody tr { transition:background .1s; }
+.tbl tbody tr:hover { background:var(--bg); }
+.tbl tbody tr.clickable { cursor:pointer; }
 
-  .amount { font-family:var(--mono); font-size:13px; }
+/* ── PILLS ── */
+.pill { display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:20px; font-size:11.5px; font-weight:500; white-space:nowrap; font-family:var(--font-en); }
+.pill::before { content:''; width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+.pill-pending { background:var(--warn-l); color:var(--warn); }.pill-pending::before { background:var(--warn); }
+.pill-approved { background:var(--accent-l); color:var(--accent); }.pill-approved::before { background:var(--accent); }
+.pill-processing { background:var(--blue-l); color:var(--blue); }.pill-processing::before { background:var(--blue); }
+.pill-shipped { background:var(--purple-l); color:var(--purple); }.pill-shipped::before { background:var(--purple); }
+.pill-done { background:#f0fdf4; color:#166534; }.pill-done::before { background:#16a34a; }
+.pill-rejected { background:var(--err-l); color:var(--err); }.pill-rejected::before { background:var(--err); }
 
-  /* MODAL */
-  .overlay {
-    position:fixed; inset:0; background:rgba(0,0,0,.7); backdrop-filter:blur(4px);
-    display:none; align-items:center; justify-content:center; z-index:100;
-  }
-  .overlay.show { display:flex; animation:fadeIn .15s ease; }
-  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+/* ── FORM ── */
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.form-group { margin-bottom:16px; }
+.form-label { display:block; font-size:11.5px; font-weight:600; color:var(--sub); letter-spacing:.04em; margin-bottom:6px; text-transform:uppercase; }
+.form-input, .form-select {
+  width:100%; padding:9px 13px; background:var(--surface2); border:1px solid var(--border2);
+  border-radius:var(--radius); font-size:13.5px; font-family:var(--font-th); color:var(--text);
+  outline:none; transition:border-color .15s, box-shadow .15s;
+}
+.form-input:focus, .form-select:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-t); }
+.form-input::placeholder { color:var(--hint); }
+textarea.form-input { resize:vertical; min-height:80px; }
 
-  .modal {
-    background:var(--bg2); border:1px solid var(--border2); border-radius:16px;
-    width:520px; max-width:95vw; max-height:90vh; overflow-y:auto;
-    animation:slideUp .2s ease;
-  }
-  @keyframes slideUp { from{transform:translateY(12px);opacity:0} to{transform:translateY(0);opacity:1} }
-  .modal-head { padding:20px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; }
-  .modal-title { font-size:15px; font-weight:600; flex:1; }
-  .modal-close { background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer; padding:0 4px; line-height:1; }
-  .modal-close:hover { color:var(--text); }
-  .modal-body { padding:24px; }
-  .modal-foot { padding:16px 24px; border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; }
+/* ── SEARCH ── */
+.search-wrap { position:relative; }
+.search-wrap input { padding-left:36px; }
+.search-ico { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--hint); width:16px; height:16px; }
 
-  .form-group { margin-bottom:18px; }
-  .form-label { font-size:12px; color:var(--muted); margin-bottom:7px; display:block; letter-spacing:.04em; }
-  .form-input {
-    width:100%; padding:10px 14px; background:var(--bg3); border:1px solid var(--border2);
-    border-radius:8px; color:var(--text); font-size:13.5px; font-family:var(--font);
-    outline:none; transition:border-color .15s;
-  }
-  .form-input:focus { border-color:var(--accent); }
-  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  .form-select {
-    width:100%; padding:10px 14px; background:var(--bg3); border:1px solid var(--border2);
-    border-radius:8px; color:var(--text); font-size:13.5px; font-family:var(--font);
-    outline:none; cursor:pointer;
-  }
+/* ── PRODUCT GRID ── */
+.prod-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+.prod-card {
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);
+  padding:16px; cursor:pointer; transition:all .15s; box-shadow:var(--shadow);
+}
+.prod-card:hover { border-color:var(--border2); box-shadow:var(--shadow-md); transform:translateY(-1px); }
+.prod-emoji { width:100%; height:80px; background:var(--bg); border-radius:var(--radius); display:grid; place-items:center; font-size:30px; margin-bottom:12px; }
+.prod-name { font-size:13.5px; font-weight:500; margin-bottom:4px; }
+.prod-sku  { font-size:11px; color:var(--hint); font-family:var(--font-en); margin-bottom:8px; }
+.prod-stock-row { display:flex; align-items:center; justify-content:space-between; }
+.prod-stock { font-size:12px; color:var(--sub); }
+.prod-stock.low { color:var(--err); font-weight:500; }
+.stock-bar { height:3px; background:var(--border); border-radius:2px; margin-top:8px; }
+.stock-fill { height:100%; border-radius:2px; background:var(--accent); transition:width .3s; }
+.stock-fill.low { background:var(--err); }
 
-  /* TABS */
-  .tabs { display:flex; gap:0; border-bottom:1px solid var(--border); padding:0 20px; }
-  .tab {
-    padding:12px 18px; font-size:13px; cursor:pointer; color:var(--muted);
-    border-bottom:2px solid transparent; margin-bottom:-1px; transition:all .15s;
-  }
-  .tab.active { color:var(--accent); border-bottom-color:var(--accent); }
-  .tab:hover { color:var(--text); }
+/* ── TIMELINE ── */
+.timeline { display:flex; flex-direction:column; gap:0; }
+.tl-item { display:flex; gap:14px; padding-bottom:20px; position:relative; }
+.tl-item:not(:last-child)::after { content:''; position:absolute; left:11px; top:26px; bottom:0; width:1px; background:var(--border); }
+.tl-dot { width:24px; height:24px; border-radius:50%; border:2px solid var(--border2); display:grid; place-items:center; flex-shrink:0; background:var(--surface); z-index:1; }
+.tl-dot.done { border-color:var(--accent); background:var(--accent-l); color:var(--accent); }
+.tl-dot.active { border-color:var(--warn); background:var(--warn-l); color:var(--warn); }
+.tl-label { font-size:13.5px; font-weight:500; }
+.tl-time  { font-size:11.5px; color:var(--hint); font-family:var(--font-en); margin-top:2px; }
 
-  /* PRODUCT GRID */
-  .product-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; padding:20px; }
-  .product-card {
-    background:var(--bg3); border:1px solid var(--border); border-radius:10px;
-    padding:16px; cursor:pointer; transition:all .15s;
-  }
-  .product-card:hover { border-color:var(--border2); transform:translateY(-1px); }
-  .product-img {
-    width:100%; height:90px; background:linear-gradient(135deg,#1e1e2e,#2a2a3e);
-    border-radius:8px; margin-bottom:12px; display:flex; align-items:center;
-    justify-content:center; font-size:28px;
-  }
-  .product-name { font-size:13px; font-weight:500; margin-bottom:6px; }
-  .product-price { font-family:var(--mono); font-size:13px; color:var(--accent); }
-  .product-stock { font-size:11px; color:var(--muted); margin-top:4px; }
-  .stock-low { color:var(--red); }
+/* ── UPLOAD AREA ── */
+.upload-area {
+  border:2px dashed var(--border2); border-radius:var(--radius-lg);
+  padding:28px; text-align:center; cursor:pointer; transition:all .15s;
+}
+.upload-area:hover { border-color:var(--accent); background:var(--accent-l); }
 
-  /* ORDER DETAIL */
-  .order-timeline { padding:20px; }
-  .timeline-item { display:flex; gap:14px; margin-bottom:20px; position:relative; }
-  .timeline-item:not(:last-child)::before {
-    content:''; position:absolute; left:11px; top:24px; bottom:-8px;
-    width:1px; background:var(--border2);
-  }
-  .timeline-dot {
-    width:24px; height:24px; border-radius:50%; border:2px solid var(--border2);
-    display:flex; align-items:center; justify-content:center; font-size:11px;
-    flex-shrink:0; margin-top:1px;
-  }
-  .timeline-dot.done { border-color:var(--accent); background:rgba(110,231,183,.12); color:var(--accent); }
-  .timeline-dot.active { border-color:var(--accent3); background:rgba(251,191,36,.12); color:var(--accent3); }
-  .timeline-info { font-size:13px; }
-  .timeline-title { font-weight:500; margin-bottom:2px; }
-  .timeline-time { font-size:11px; color:var(--muted); font-family:var(--mono); }
+/* ── INFO BOXES ── */
+.info-box { display:flex; gap:10px; padding:12px 14px; border-radius:var(--radius); font-size:13px; margin-bottom:14px; }
+.info-box.info { background:var(--blue-l); color:var(--blue); border:1px solid #bfdbfe; }
+.info-box.warn { background:var(--warn-l); color:var(--warn); border:1px solid #fde68a; }
+.info-box.success { background:var(--accent-l); color:var(--accent); border:1px solid #a7f3d0; }
 
-  /* SLIP PREVIEW */
-  .slip-preview {
-    background:var(--bg3); border:1px solid var(--border2); border-radius:10px;
-    padding:16px; text-align:center; margin-bottom:16px;
-  }
-  .slip-img-placeholder {
-    width:100%; height:180px; background:linear-gradient(135deg,#1a1a2e,#16213e);
-    border-radius:8px; display:flex; flex-direction:column; align-items:center;
-    justify-content:center; gap:8px; margin-bottom:12px;
-  }
-  .slip-icon { font-size:36px; opacity:.4; }
-  .slip-text { font-size:12px; color:var(--muted); }
+/* ── MODAL ── */
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,.3); backdrop-filter:blur(2px); display:none; align-items:center; justify-content:center; z-index:500; padding:20px; }
+.overlay.open { display:flex; }
+.modal { background:var(--surface); border-radius:var(--radius-lg); border:1px solid var(--border); box-shadow:var(--shadow-md); width:480px; max-width:100%; max-height:90vh; overflow-y:auto; animation:modalIn .2s ease; }
+@keyframes modalIn { from{opacity:0;transform:scale(.97)translateY(8px)} to{opacity:1;transform:scale(1)translateY(0)} }
+.modal-head { padding:18px 22px; display:flex; align-items:flex-start; gap:10px; border-bottom:1px solid var(--border); }
+.modal-title { font-size:15px; font-weight:600; flex:1; }
+.modal-close { background:none; border:none; color:var(--hint); cursor:pointer; font-size:18px; line-height:1; padding:2px; margin-top:-2px; border-radius:6px; }
+.modal-close:hover { background:var(--bg); color:var(--text); }
+.modal-body { padding:22px; }
+.modal-foot { padding:14px 22px; border-top:1px solid var(--border); display:flex; gap:8px; justify-content:flex-end; }
 
-  /* SEARCH */
-  .search-bar {
-    display:flex; align-items:center; gap:10px; background:var(--bg3);
-    border:1px solid var(--border); border-radius:8px; padding:8px 14px;
-  }
-  .search-bar input {
-    background:none; border:none; color:var(--text); font-size:13.5px;
-    font-family:var(--font); outline:none; flex:1;
-  }
-  .search-bar input::placeholder { color:var(--muted); }
+/* ── TOAST ── */
+.toast-wrap { position:fixed; bottom:20px; right:20px; display:flex; flex-direction:column; gap:8px; z-index:999; }
+.toast { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:11px 16px; font-size:13px; display:flex; align-items:center; gap:9px; box-shadow:var(--shadow-md); animation:toastIn .2s ease; max-width:320px; }
+@keyframes toastIn { from{opacity:0;transform:translateX(10px)} to{opacity:1;transform:translateX(0)} }
+.toast.success { border-color:#a7f3d0; }
+.toast.error   { border-color:#fecaca; }
 
-  /* PAGE VISIBILITY */
-  .page { display:none; }
-  .page.active { display:block; }
+/* ── LOGIN ── */
+.login-wrap { width:380px; }
+.login-header { text-align:center; margin-bottom:36px; }
+.login-logomark { width:52px; height:52px; background:var(--accent); border-radius:14px; display:grid; place-items:center; margin:0 auto 14px; }
+.login-logomark svg { width:24px; height:24px; fill:white; }
+.login-appname { font-family:var(--font-en); font-size:22px; font-weight:600; letter-spacing:-.03em; color:var(--text); }
+.login-appsub { font-size:12.5px; color:var(--hint); margin-top:3px; }
+.login-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:28px; box-shadow:var(--shadow-md); }
+.login-title { font-size:16px; font-weight:600; margin-bottom:4px; }
+.login-sub { font-size:13px; color:var(--sub); margin-bottom:22px; }
+.pw-wrap { position:relative; }
+.pw-wrap input { padding-right:40px; }
+.pw-eye { position:absolute; right:11px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--hint); padding:2px; font-size:14px; }
+.pw-eye:hover { color:var(--text); }
+.login-btn { width:100%; padding:10px; background:var(--accent); color:#fff; border:none; border-radius:var(--radius); font-size:14px; font-weight:500; cursor:pointer; font-family:var(--font-th); transition:all .15s; display:flex; align-items:center; justify-content:center; gap:8px; }
+.login-btn:hover:not(:disabled) { background:#235c40; }
+.login-btn:disabled { opacity:.55; cursor:not-allowed; }
+.login-err { display:none; align-items:center; gap:8px; padding:10px 13px; background:var(--err-l); border:1px solid #fecaca; border-radius:var(--radius); font-size:13px; color:var(--err); margin-bottom:14px; }
+.login-err.show { display:flex; }
+.login-divider { display:flex; align-items:center; gap:10px; margin:18px 0; font-size:11.5px; color:var(--hint); }
+.login-divider::before, .login-divider::after { content:''; flex:1; height:1px; background:var(--border); }
+.quick-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.quick-btn {
+  background:var(--bg); border:1px solid var(--border2); border-radius:var(--radius);
+  padding:10px 6px; cursor:pointer; text-align:center; transition:all .12s;
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+}
+.quick-btn:hover { border-color:var(--accent); background:var(--accent-l); }
+.quick-btn .qb-ico { font-size:20px; }
+.quick-btn .qb-role { font-size:12px; font-weight:500; color:var(--text); }
+.quick-btn .qb-email { font-size:10px; color:var(--hint); }
+.spin { width:14px; height:14px; border:2px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:sp .6s linear infinite; display:none; }
+@keyframes sp { to{transform:rotate(360deg)} }
 
-  /* CART */
-  .cart-item {
-    display:flex; align-items:center; gap:14px; padding:14px 0;
-    border-bottom:1px solid var(--border);
-  }
-  .cart-item:last-child { border-bottom:none; }
-  .cart-emoji { font-size:24px; width:40px; text-align:center; }
-  .cart-name { flex:1; font-size:13.5px; }
-  .cart-price { font-family:var(--mono); font-size:13px; color:var(--accent); }
-  .qty-ctrl { display:flex; align-items:center; gap:8px; }
-  .qty-btn {
-    width:24px; height:24px; border-radius:6px; background:var(--bg3);
-    border:1px solid var(--border2); color:var(--text); cursor:pointer;
-    font-size:14px; display:flex; align-items:center; justify-content:center;
-  }
-  .qty-val { font-family:var(--mono); font-size:13px; min-width:20px; text-align:center; }
+/* ── ROLE DEMO SWITCHER (sidebar) ── */
+.demo-switcher { display:flex; gap:5px; flex-wrap:wrap; margin-top:8px; }
+.demo-btn { padding:4px 9px; font-size:11px; border-radius:6px; border:1px solid var(--border2); background:none; color:var(--sub); cursor:pointer; font-family:var(--font-th); transition:all .1s; }
+.demo-btn:hover { background:var(--bg); }
+.demo-btn.on { background:var(--accent-l); color:var(--accent); border-color:var(--accent); font-weight:500; }
 
-  /* TOAST */
-  .toast-container { position:fixed; bottom:24px; right:24px; display:flex; flex-direction:column; gap:8px; z-index:200; }
-  .toast {
-    background:var(--bg2); border:1px solid var(--border2); border-radius:10px;
-    padding:12px 18px; font-size:13px; display:flex; align-items:center; gap:10px;
-    animation:toastIn .25s ease; box-shadow:0 8px 32px rgba(0,0,0,.4);
-  }
-  @keyframes toastIn { from{transform:translateX(20px);opacity:0} to{transform:translateX(0);opacity:1} }
-  .toast.success { border-color:rgba(110,231,183,.3); }
-  .toast.error { border-color:rgba(248,113,113,.3); }
-  .toast-icon { font-size:16px; }
+/* ── ORDER DETAIL ── */
+.order-items-list { border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+.order-item-row { display:flex; align-items:center; gap:12px; padding:11px 14px; border-bottom:1px solid var(--border); }
+.order-item-row:last-child { border-bottom:none; }
+.oi-emoji { font-size:20px; width:32px; text-align:center; }
+.oi-name { flex:1; font-size:13.5px; }
+.oi-qty { font-size:12px; color:var(--sub); font-family:var(--font-en); }
 
-  /* ROLE SWITCHER */
-  .role-switcher { display:flex; gap:8px; margin-bottom:20px; }
-  .role-btn {
-    padding:7px 16px; border-radius:8px; font-size:12.5px; cursor:pointer;
-    border:1px solid var(--border2); color:var(--muted); background:transparent;
-    transition:all .15s; font-family:var(--font);
-  }
-  .role-btn.active { background:var(--accent); color:#0f0f11; border-color:var(--accent); font-weight:600; }
+/* ── SLIP ── */
+.slip-frame { background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:16px; }
+.slip-placeholder { height:160px; border:2px dashed var(--border2); border-radius:var(--radius); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color:var(--hint); font-size:13px; }
 
-  /* INFO BOX */
-  .info-box {
-    padding:12px 16px; border-radius:8px; font-size:13px;
-    background:rgba(110,231,183,.07); border:1px solid rgba(110,231,183,.2);
-    color:var(--accent); margin-bottom:16px; display:flex; gap:8px; align-items:flex-start;
-  }
-  .info-box.warning { background:rgba(251,191,36,.07); border-color:rgba(251,191,36,.2); color:var(--accent3); }
-  .info-box.danger { background:rgba(248,113,113,.07); border-color:rgba(248,113,113,.2); color:var(--red); }
-
-  ::-webkit-scrollbar { width:4px; }
-  ::-webkit-scrollbar-track { background:transparent; }
-  ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:4px; }
+/* SCROLL */
+::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border2); border-radius:4px; }
 </style>
 </head>
 <body>
 
-<!-- SIDEBAR -->
-<aside class="sidebar">
-  <div class="logo">
-    <div class="logo-icon">S</div>
-    <div>
-      <div class="logo-text">StoreOS</div>
-      <div class="logo-sub">v2.1.0</div>
+<!-- ───────── LOGIN ───────── -->
+<div id="login-screen">
+<div class="login-wrap">
+  <div class="login-header">
+    <div class="login-logomark">
+      <svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zM4 9h16v2H4V9zm0 4h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4z"/></svg>
     </div>
+    <div class="login-appname">StoreOS</div>
+    <div class="login-appsub">ระบบคลังสินค้าหน่วยงาน</div>
   </div>
 
-  <nav class="nav" id="nav">
-    <!-- items injected by JS based on role -->
-  </nav>
+  <div class="login-card">
+    <div class="login-title">เข้าสู่ระบบ</div>
+    <div class="login-sub">กรุณากรอกข้อมูลบัญชีของคุณ</div>
 
+    <div class="login-err" id="lerr"><span>⚠</span><span id="lerr-msg">อีเมลหรือรหัสผ่านไม่ถูกต้อง</span></div>
+
+    <div class="form-group">
+      <label class="form-label">อีเมล</label>
+      <div class="search-wrap">
+        <svg class="search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <input class="form-input" id="lemail" type="email" placeholder="ชื่อ@หน่วยงาน.go.th" autocomplete="username">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">รหัสผ่าน</label>
+      <div class="pw-wrap">
+        <input class="form-input" id="lpass" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+        <button class="pw-eye" onclick="togglePw()" type="button" id="pw-eye-btn">👁</button>
+      </div>
+    </div>
+
+    <button class="login-btn" id="lbtn" onclick="doLogin()">
+      <div class="spin" id="lspin"></div>
+      <span id="lbtn-txt">เข้าสู่ระบบ</span>
+    </button>
+
+    <div class="login-divider">เข้าสู่ระบบด่วน (Demo)</div>
+    <div class="quick-grid">
+      <button class="quick-btn" onclick="quickLogin('admin@agency.go.th','admin123','admin')">
+        <span class="qb-ico">👑</span><span class="qb-role">Admin</span><span class="qb-email">admin</span>
+      </button>
+      <button class="quick-btn" onclick="quickLogin('staff@agency.go.th','staff123','customer')">
+        <span class="qb-ico">🛍</span><span class="qb-role">เจ้าหน้าที่</span><span class="qb-email">staff</span>
+      </button>
+      <button class="quick-btn" onclick="quickLogin('picker@agency.go.th','pick123','picker')">
+        <span class="qb-ico">📦</span><span class="qb-role">คลังสินค้า</span><span class="qb-email">picker</span>
+      </button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ───────── APP ───────── -->
+<div id="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zM4 9h16v2H4V9zm0 4h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4z"/></svg>
+    </div>
+    <div><div class="logo-name">StoreOS</div><div class="logo-tagline">ระบบคลังสินค้า</div></div>
+  </div>
+  <div id="nav-area"></div>
   <div class="sidebar-footer">
-    <div class="role-badge">
-      <div class="role-dot" id="role-dot" style="background:var(--accent)"></div>
-      <span id="role-label">Admin</span>
+    <div class="user-chip">
+      <div class="user-avatar" id="u-avatar">A</div>
+      <div><div class="user-name" id="u-name">ผู้ดูแลระบบ</div><div class="user-role" id="u-role">Admin</div></div>
     </div>
-    <div style="margin-top:10px; font-size:11px; color:var(--muted);">เปลี่ยน Role (Demo)</div>
-    <div style="display:flex;gap:6px;margin-top:6px;">
-      <button class="role-btn active" onclick="switchRole('admin',this)">Admin</button>
-      <button class="role-btn" onclick="switchRole('customer',this)">Customer</button>
-      <button class="role-btn" onclick="switchRole('picker',this)">Picker</button>
+    <div style="font-size:10.5px;color:var(--hint);margin-bottom:6px;">สลับบทบาท (Demo)</div>
+    <div class="demo-switcher">
+      <button class="demo-btn on" onclick="demoSwitch('admin',this)">Admin</button>
+      <button class="demo-btn" onclick="demoSwitch('customer',this)">เจ้าหน้าที่</button>
+      <button class="demo-btn" onclick="demoSwitch('picker',this)">คลัง</button>
     </div>
+    <button class="btn-logout" style="margin-top:12px" onclick="doLogout()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+      ออกจากระบบ
+    </button>
   </div>
 </aside>
 
 <!-- MAIN -->
-<main class="main">
+<div class="main">
   <div class="topbar">
     <div>
-      <div class="topbar-title" id="topbar-title">Dashboard</div>
-      <div class="topbar-sub" id="topbar-sub">ภาพรวมระบบร้านค้า</div>
+      <span class="topbar-title" id="tb-title">Dashboard</span>
+      <span class="topbar-bread" id="tb-bread"></span>
     </div>
-    <div style="margin-left:auto; display:flex; gap:10px;">
-      <button class="btn btn-ghost" onclick="showToast('🔔 ไม่มีการแจ้งเตือนใหม่','info')">🔔</button>
-      <button class="btn btn-primary" id="topbar-action" onclick="openModal('add-product')">+ เพิ่มสินค้า</button>
-    </div>
+    <div class="spacer"></div>
+    <div id="tb-actions"></div>
   </div>
 
-  <div class="content">
+  <div class="content" id="content-area">
 
-    <!-- ===== DASHBOARD PAGE ===== -->
-    <div class="page active" id="page-dashboard">
-      <div class="stats-grid">
-        <div class="stat-card green">
-          <div class="stat-label">ยอดขายวันนี้</div>
-          <div class="stat-value">฿24,850</div>
-          <div class="stat-change up">↑ 12% จากเมื่อวาน</div>
+    <!-- DASHBOARD -->
+    <div class="page" id="pg-dashboard">
+      <div class="stats-row">
+        <div class="stat">
+          <div class="stat-icon" style="background:#f0fdf4"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+          <div class="stat-label">ออเดอร์วันนี้</div>
+          <div class="stat-val">24</div>
+          <div class="stat-note up">↑ 4 จากเมื่อวาน</div>
         </div>
-        <div class="stat-card amber">
-          <div class="stat-label">รอตรวจสอบบิล</div>
-          <div class="stat-value">7</div>
-          <div class="stat-change">ออเดอร์รอดำเนินการ</div>
+        <div class="stat">
+          <div class="stat-icon" style="background:#fef3c7"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
+          <div class="stat-label">รอตรวจสอบ</div>
+          <div class="stat-val">7</div>
+          <div class="stat-note">รายการรอ Admin</div>
         </div>
-        <div class="stat-card purple">
+        <div class="stat">
+          <div class="stat-icon" style="background:#dbeafe"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg></div>
           <div class="stat-label">สินค้าทั้งหมด</div>
-          <div class="stat-value">142</div>
-          <div class="stat-change">SKU ในระบบ</div>
+          <div class="stat-val">142</div>
+          <div class="stat-note">SKU ในระบบ</div>
         </div>
-        <div class="stat-card red">
+        <div class="stat">
+          <div class="stat-icon" style="background:#fee2e2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
           <div class="stat-label">สต็อกใกล้หมด</div>
-          <div class="stat-value">5</div>
-          <div class="stat-change">รายการต้องเติม</div>
+          <div class="stat-val">5</div>
+          <div class="stat-note dn">ต้องเติมด่วน</div>
         </div>
       </div>
 
-      <div class="section">
-        <div class="section-head">
-          <div>
-            <div class="section-title">ออเดอร์ล่าสุด</div>
-            <div class="section-sub">อัปเดตเมื่อ 5 นาทีที่แล้ว</div>
-          </div>
-          <button class="btn btn-ghost" onclick="navTo('orders')">ดูทั้งหมด →</button>
+      <div class="card">
+        <div class="card-head">
+          <div><div class="card-title">ออเดอร์ล่าสุด</div><div class="card-sub">อัปเดตล่าสุด 5 นาทีที่แล้ว</div></div>
+          <div class="spacer"></div>
+          <button class="btn btn-outline btn-sm" onclick="navTo('orders')">ดูทั้งหมด →</button>
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Order ID</th><th>ลูกค้า</th><th>รายการ</th><th>ยอดรวม</th><th>สถานะ</th><th>เวลา</th>
-            </tr>
-          </thead>
+        <table class="tbl">
+          <thead><tr><th>เลขออเดอร์</th><th>ผู้ขอ</th><th>รายการ</th><th>สถานะ</th><th>วันที่</th></tr></thead>
           <tbody>
-            <tr onclick="openModal('order-detail')" style="cursor:pointer">
-              <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">#ORD-0842</span></td>
-              <td>สมชาย มีสุข</td>
-              <td>3 รายการ</td>
-              <td class="amount">฿1,250</td>
-              <td><span class="status-pill pill-pending">Pending Verification</span></td>
-              <td><span style="font-size:12px;color:var(--muted)">14:32</span></td>
-            </tr>
-            <tr onclick="openModal('order-detail')" style="cursor:pointer">
-              <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">#ORD-0841</span></td>
-              <td>วันดี รักดี</td>
-              <td>1 รายการ</td>
-              <td class="amount">฿380</td>
-              <td><span class="status-pill pill-processing">Processing</span></td>
-              <td><span style="font-size:12px;color:var(--muted)">13:15</span></td>
-            </tr>
-            <tr onclick="openModal('order-detail')" style="cursor:pointer">
-              <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">#ORD-0840</span></td>
-              <td>นภา สุขใจ</td>
-              <td>5 รายการ</td>
-              <td class="amount">฿2,890</td>
-              <td><span class="status-pill pill-shipped">Shipped</span></td>
-              <td><span style="font-size:12px;color:var(--muted)">11:08</span></td>
-            </tr>
-            <tr onclick="openModal('order-detail')" style="cursor:pointer">
-              <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">#ORD-0839</span></td>
-              <td>ประเสริฐ ดีงาม</td>
-              <td>2 รายการ</td>
-              <td class="amount">฿760</td>
-              <td><span class="status-pill pill-rejected">Payment Rejected</span></td>
-              <td><span style="font-size:12px;color:var(--muted)">09:45</span></td>
-            </tr>
+            <tr class="clickable" onclick="openM('order-detail')"><td><span class="mono" style="color:var(--hint);font-size:12px">#ORD-0842</span></td><td>สมชาย มีสุข</td><td>3 รายการ</td><td><span class="pill pill-pending">รอตรวจสอบ</span></td><td><span class="mono t-sm muted">14:32</span></td></tr>
+            <tr class="clickable" onclick="openM('order-detail')"><td><span class="mono" style="color:var(--hint);font-size:12px">#ORD-0841</span></td><td>วันดี รักดี</td><td>1 รายการ</td><td><span class="pill pill-processing">กำลังจัดของ</span></td><td><span class="mono t-sm muted">13:15</span></td></tr>
+            <tr class="clickable" onclick="openM('order-detail')"><td><span class="mono" style="color:var(--hint);font-size:12px">#ORD-0840</span></td><td>นภา สุขใจ</td><td>5 รายการ</td><td><span class="pill pill-shipped">จัดส่งแล้ว</span></td><td><span class="mono t-sm muted">11:08</span></td></tr>
+            <tr class="clickable" onclick="openM('order-detail')"><td><span class="mono" style="color:var(--hint);font-size:12px">#ORD-0839</span></td><td>ประเสริฐ ดีงาม</td><td>2 รายการ</td><td><span class="pill pill-rejected">ปฏิเสธ</span></td><td><span class="mono t-sm muted">09:45</span></td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- ===== ORDERS PAGE ===== -->
-    <div class="page" id="page-orders">
-      <div style="display:flex;gap:12px;margin-bottom:20px;align-items:center;">
-        <div class="search-bar" style="flex:1">
-          <span style="color:var(--muted)">🔍</span>
-          <input type="text" placeholder="ค้นหาออเดอร์ ชื่อลูกค้า...">
+    <!-- ORDERS -->
+    <div class="page" id="pg-orders">
+      <div style="display:flex;gap:10px;margin-bottom:18px;align-items:center">
+        <div class="search-wrap" style="flex:1">
+          <svg class="search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input class="form-input" style="padding-left:36px" placeholder="ค้นหาเลขออเดอร์ ชื่อ...">
         </div>
-        <select class="form-select" style="width:200px">
+        <select class="form-select" style="width:190px">
           <option>ทุกสถานะ</option>
-          <option>Pending Verification</option>
-          <option>Paid / To Process</option>
-          <option>Processing</option>
-          <option>Shipped</option>
-          <option>Payment Rejected</option>
+          <option>รอตรวจสอบ</option>
+          <option>อนุมัติแล้ว</option>
+          <option>กำลังจัดของ</option>
+          <option>จัดส่งแล้ว</option>
         </select>
       </div>
-
-      <div class="section">
-        <div class="section-head">
-          <div class="section-title">รายการออเดอร์ทั้งหมด</div>
-          <span class="nav-badge" style="margin-left:0">7 รอตรวจสอบ</span>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">รายการออเดอร์ทั้งหมด</div>
+          <div class="spacer"></div>
+          <span class="pill pill-pending" style="font-size:11px">7 รอตรวจสอบ</span>
         </div>
-        <table>
-          <thead>
-            <tr><th>Order ID</th><th>ลูกค้า</th><th>วันที่</th><th>ยอดรวม</th><th>สถานะ</th><th>การดำเนินการ</th></tr>
-          </thead>
+        <table class="tbl">
+          <thead><tr><th>เลขออเดอร์</th><th>ผู้ขอ</th><th>วันที่ขอ</th><th>รายการ</th><th>สถานะ</th><th>การดำเนินการ</th></tr></thead>
+          <tbody>
+            <tr><td><span class="mono t-sm" style="color:var(--hint)">#ORD-0842</span></td><td>สมชาย มีสุข</td><td><span class="mono t-sm muted">21 เม.ย. 68</span></td><td>3 รายการ</td><td><span class="pill pill-pending">รอตรวจสอบ</span></td><td><div style="display:flex;gap:6px"><button class="btn btn-outline btn-sm" onclick="openM('verify')">ตรวจสอบ</button><button class="btn btn-ghost btn-sm" onclick="openM('order-detail')">รายละเอียด</button></div></td></tr>
+            <tr><td><span class="mono t-sm" style="color:var(--hint)">#ORD-0841</span></td><td>วันดี รักดี</td><td><span class="mono t-sm muted">21 เม.ย. 68</span></td><td>1 รายการ</td><td><span class="pill pill-processing">กำลังจัดของ</span></td><td><button class="btn btn-ghost btn-sm" onclick="openM('order-detail')">รายละเอียด</button></td></tr>
+            <tr><td><span class="mono t-sm" style="color:var(--hint)">#ORD-0840</span></td><td>นภา สุขใจ</td><td><span class="mono t-sm muted">21 เม.ย. 68</span></td><td>5 รายการ</td><td><span class="pill pill-shipped">จัดส่งแล้ว</span></td><td><button class="btn btn-ghost btn-sm" onclick="openM('order-detail')">รายละเอียด</button></td></tr>
+            <tr><td><span class="mono t-sm" style="color:var(--hint)">#ORD-0839</span></td><td>ประเสริฐ ดีงาม</td><td><span class="mono t-sm muted">20 เม.ย. 68</span></td><td>2 รายการ</td><td><span class="pill pill-rejected">ปฏิเสธ</span></td><td><button class="btn btn-ghost btn-sm" onclick="openM('order-detail')">รายละเอียด</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PRODUCTS -->
+    <div class="page" id="pg-products">
+      <div style="display:flex;gap:10px;margin-bottom:18px">
+        <div class="search-wrap" style="flex:1">
+          <svg class="search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input class="form-input" style="padding-left:36px" placeholder="ค้นหาสินค้า...">
+        </div>
+        <button class="btn btn-primary" onclick="openM('add-product')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+          เพิ่มสินค้า
+        </button>
+      </div>
+      <div class="prod-grid">
+        <div class="prod-card" onclick="openM('edit-product')">
+          <div class="prod-emoji">🧴</div>
+          <div class="prod-name">ครีมบำรุงผิว SPF50</div>
+          <div class="prod-sku">SKU-0012</div>
+          <div class="prod-stock-row"><span class="prod-stock">คงเหลือ 48 ชิ้น</span><span class="pill pill-approved" style="font-size:10px">ปกติ</span></div>
+          <div class="stock-bar"><div class="stock-fill" style="width:72%"></div></div>
+        </div>
+        <div class="prod-card" onclick="openM('edit-product')">
+          <div class="prod-emoji">👟</div>
+          <div class="prod-name">รองเท้าวิ่ง ProRun</div>
+          <div class="prod-sku">SKU-0031</div>
+          <div class="prod-stock-row"><span class="prod-stock">คงเหลือ 12 ชิ้น</span><span class="pill pill-processing" style="font-size:10px">กลาง</span></div>
+          <div class="stock-bar"><div class="stock-fill" style="width:24%"></div></div>
+        </div>
+        <div class="prod-card" onclick="openM('edit-product')">
+          <div class="prod-emoji">🎧</div>
+          <div class="prod-name">หูฟัง Wireless X3</div>
+          <div class="prod-sku">SKU-0058</div>
+          <div class="prod-stock-row"><span class="prod-stock low">⚠ คงเหลือ 3 ชิ้น</span><span class="pill pill-rejected" style="font-size:10px">ใกล้หมด</span></div>
+          <div class="stock-bar"><div class="stock-fill low" style="width:6%"></div></div>
+        </div>
+        <div class="prod-card" onclick="openM('edit-product')">
+          <div class="prod-emoji">📱</div>
+          <div class="prod-name">เคสโทรศัพท์ Clear</div>
+          <div class="prod-sku">SKU-0072</div>
+          <div class="prod-stock-row"><span class="prod-stock">คงเหลือ 200 ชิ้น</span><span class="pill pill-approved" style="font-size:10px">ปกติ</span></div>
+          <div class="stock-bar"><div class="stock-fill" style="width:100%"></div></div>
+        </div>
+        <div class="prod-card" onclick="openM('edit-product')">
+          <div class="prod-emoji">☕</div>
+          <div class="prod-name">กาแฟดริป Premium</div>
+          <div class="prod-sku">SKU-0085</div>
+          <div class="prod-stock-row"><span class="prod-stock low">⚠ คงเหลือ 2 ชิ้น</span><span class="pill pill-rejected" style="font-size:10px">ใกล้หมด</span></div>
+          <div class="stock-bar"><div class="stock-fill low" style="width:4%"></div></div>
+        </div>
+        <div class="prod-card" onclick="openM('edit-product')">
+          <div class="prod-emoji">🌿</div>
+          <div class="prod-name">วิตามิน C 1000mg</div>
+          <div class="prod-sku">SKU-0091</div>
+          <div class="prod-stock-row"><span class="prod-stock">คงเหลือ 75 ชิ้น</span><span class="pill pill-approved" style="font-size:10px">ปกติ</span></div>
+          <div class="stock-bar"><div class="stock-fill" style="width:50%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REQUEST (Customer) -->
+    <div class="page" id="pg-request">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">เบิกสินค้า</div>
+          <div class="spacer"></div>
+          <button class="btn btn-primary" onclick="openM('submit-request')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+            ส่งคำขอเบิก
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="prod-grid">
+            <div class="prod-card">
+              <div class="prod-emoji">🧴</div>
+              <div class="prod-name">ครีมบำรุงผิว SPF50</div>
+              <div class="prod-sku">คงเหลือ 48 ชิ้น</div>
+              <button class="btn btn-outline btn-sm" style="width:100%;margin-top:10px;justify-content:center" onclick="showToast('✅ เพิ่มในรายการขอเบิก','success')">+ ขอเบิก</button>
+            </div>
+            <div class="prod-card">
+              <div class="prod-emoji">👟</div>
+              <div class="prod-name">รองเท้าวิ่ง ProRun</div>
+              <div class="prod-sku">คงเหลือ 12 ชิ้น</div>
+              <button class="btn btn-outline btn-sm" style="width:100%;margin-top:10px;justify-content:center" onclick="showToast('✅ เพิ่มในรายการขอเบิก','success')">+ ขอเบิก</button>
+            </div>
+            <div class="prod-card">
+              <div class="prod-emoji">🎧</div>
+              <div class="prod-name">หูฟัง Wireless X3</div>
+              <div class="prod-sku prod-stock low">⚠ คงเหลือ 3 ชิ้น</div>
+              <button class="btn btn-outline btn-sm" style="width:100%;margin-top:10px;justify-content:center" onclick="showToast('✅ เพิ่มในรายการขอเบิก','success')">+ ขอเบิก</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MY REQUESTS (Customer) -->
+    <div class="page" id="pg-my-requests">
+      <div class="card">
+        <div class="card-head"><div class="card-title">คำขอเบิกของฉัน</div></div>
+        <table class="tbl">
+          <thead><tr><th>เลขออเดอร์</th><th>วันที่ขอ</th><th>รายการ</th><th>สถานะ</th><th></th></tr></thead>
+          <tbody>
+            <tr><td><span class="mono t-sm" style="color:var(--hint)">#ORD-0842</span></td><td><span class="mono t-sm muted">21 เม.ย. 68</span></td><td>ครีมบำรุง, หูฟัง +1</td><td><span class="pill pill-pending">รอตรวจสอบ</span></td><td><button class="btn btn-ghost btn-sm" onclick="openM('order-detail')">ติดตาม</button></td></tr>
+            <tr><td><span class="mono t-sm" style="color:var(--hint)">#ORD-0815</span></td><td><span class="mono t-sm muted">15 เม.ย. 68</span></td><td>รองเท้าวิ่ง ProRun</td><td><span class="pill pill-shipped">จัดส่งแล้ว</span></td><td><button class="btn btn-ghost btn-sm" onclick="openM('order-detail')">ติดตาม</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PICKING -->
+    <div class="page" id="pg-picking">
+      <div class="info-box info">
+        <svg width="14" height="14" style="flex-shrink:0;margin-top:1px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        <span>แสดงเฉพาะออเดอร์ที่ Admin <strong>อนุมัติแล้ว</strong></span>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">รายการจัดของ</div>
+          <div class="spacer"></div>
+          <span class="pill pill-pending" style="font-size:11px">4 รายการรอ</span>
+        </div>
+        <table class="tbl">
+          <thead><tr><th>เลขออเดอร์</th><th>ผู้ขอ</th><th>สินค้า</th><th>สถานะ</th><th>การดำเนินการ</th></tr></thead>
           <tbody>
             <tr>
-              <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">#ORD-0842</span></td>
-              <td><div style="font-size:13.5px">สมชาย มีสุข</div><div style="font-size:11px;color:var(--muted)">3 รายการ</div></td>
-              <td><span style="font-size:12px;color:var(--muted)">21 เม.ย. 2568, 14:32</span></td>
-              <td class="amount">฿1,250</td>
-              <td><span class="status-pill pill-pending">Pending Verification</span></td>
+              <td><span class="mono t-sm" style="color:var(--hint)">#ORD-0838</span></td>
+              <td>มานี รักเรียน</td>
+              <td><div class="t-sm">🧴 ครีมบำรุง ×2</div><div class="t-sm">🌿 วิตามิน C ×1</div></td>
+              <td><span class="pill pill-approved">อนุมัติแล้ว</span></td>
               <td>
                 <div style="display:flex;gap:6px">
-                  <button class="btn btn-ghost" style="padding:5px 10px;font-size:12px" onclick="openModal('verify-payment')">ตรวจสอบบิล</button>
-                  <button class="btn btn-ghost" style="padding:5px 10px;font-size:12px" onclick="openModal('order-detail')">รายละเอียด</button>
+                  <button class="btn btn-outline btn-sm" onclick="openM('picking-list')">ใบจัดของ 🖨</button>
+                  <button class="btn btn-primary btn-sm" onclick="openM('tracking')">ใส่ Tracking</button>
                 </div>
               </td>
             </tr>
             <tr>
-              <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">#ORD-0841</span></td>
-              <td><div style="font-size:13.5px">วันดี รักดี</div><div style="font-size:11px;color:var(--muted)">1 รายการ</div></td>
-              <td><span style="font-size:12px;color:var(--muted)">21 เม.ย. 2568, 13:15</span></td>
-              <td class="amount">฿380</td>
-              <td><span class="status-pill pill-processing">Processing</span></td>
-              <td>
-                <button class="btn btn-ghost" style="padding:5px 10px;font-size:12px" onclick="openModal('order-detail')">รายละเอียด</button>
-              </td>
-            </tr>
-            <tr>
-              <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">#ORD-0840</span></td>
-              <td><div style="font-size:13.5px">นภา สุขใจ</div><div style="font-size:11px;color:var(--muted)">5 รายการ</div></td>
-              <td><span style="font-size:12px;color:var(--muted)">21 เม.ย. 2568, 11:08</span></td>
-              <td class="amount">฿2,890</td>
-              <td><span class="status-pill pill-shipped">Shipped</span></td>
-              <td>
-                <button class="btn btn-ghost" style="padding:5px 10px;font-size:12px" onclick="openModal('order-detail')">รายละเอียด</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- ===== PRODUCTS PAGE ===== -->
-    <div class="page" id="page-products">
-      <div style="display:flex;gap:12px;margin-bottom:20px;">
-        <div class="search-bar" style="flex:1">
-          <span style="color:var(--muted)">🔍</span>
-          <input type="text" placeholder="ค้นหาสินค้า...">
-        </div>
-        <button class="btn btn-primary" onclick="openModal('add-product')">+ เพิ่มสินค้า</button>
-      </div>
-
-      <div class="product-grid">
-        <div class="product-card" onclick="openModal('edit-product')">
-          <div class="product-img">🧴</div>
-          <div class="product-name">ครีมบำรุงผิว SPF50</div>
-          <div class="product-price">฿350</div>
-          <div class="product-stock">สต็อก: 48 ชิ้น</div>
-        </div>
-        <div class="product-card" onclick="openModal('edit-product')">
-          <div class="product-img">👟</div>
-          <div class="product-name">รองเท้าวิ่ง ProRun</div>
-          <div class="product-price">฿1,890</div>
-          <div class="product-stock">สต็อก: 12 ชิ้น</div>
-        </div>
-        <div class="product-card" onclick="openModal('edit-product')">
-          <div class="product-img">🎧</div>
-          <div class="product-name">หูฟัง Wireless X3</div>
-          <div class="product-price">฿2,490</div>
-          <div class="product-stock stock-low">⚠ สต็อก: 3 ชิ้น (ใกล้หมด)</div>
-        </div>
-        <div class="product-card" onclick="openModal('edit-product')">
-          <div class="product-img">📱</div>
-          <div class="product-name">เคสโทรศัพท์ Clear</div>
-          <div class="product-price">฿129</div>
-          <div class="product-stock">สต็อก: 200 ชิ้น</div>
-        </div>
-        <div class="product-card" onclick="openModal('edit-product')">
-          <div class="product-img">☕</div>
-          <div class="product-name">กาแฟดริป Premium</div>
-          <div class="product-price">฿280</div>
-          <div class="product-stock stock-low">⚠ สต็อก: 2 ชิ้น (ใกล้หมด)</div>
-        </div>
-        <div class="product-card" onclick="openModal('edit-product')">
-          <div class="product-img">🌿</div>
-          <div class="product-name">วิตามิน C 1000mg</div>
-          <div class="product-price">฿195</div>
-          <div class="product-stock">สต็อก: 75 ชิ้น</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ===== CART PAGE (Customer) ===== -->
-    <div class="page" id="page-cart">
-      <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;">
-        <div>
-          <div class="section">
-            <div class="section-head">
-              <div class="section-title">ตะกร้าสินค้า</div>
-              <div class="section-sub">3 รายการ</div>
-            </div>
-            <div style="padding:0 20px;">
-              <div class="cart-item">
-                <div class="cart-emoji">🧴</div>
-                <div style="flex:1">
-                  <div class="cart-name">ครีมบำรุงผิว SPF50</div>
-                  <div style="font-size:12px;color:var(--muted)">฿350 / ชิ้น</div>
-                </div>
-                <div class="qty-ctrl">
-                  <button class="qty-btn">−</button>
-                  <span class="qty-val">2</span>
-                  <button class="qty-btn">+</button>
-                </div>
-                <div class="cart-price" style="min-width:70px;text-align:right">฿700</div>
-                <button style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px 8px">×</button>
-              </div>
-              <div class="cart-item">
-                <div class="cart-emoji">🎧</div>
-                <div style="flex:1">
-                  <div class="cart-name">หูฟัง Wireless X3</div>
-                  <div style="font-size:12px;color:var(--muted)">฿2,490 / ชิ้น</div>
-                </div>
-                <div class="qty-ctrl">
-                  <button class="qty-btn">−</button>
-                  <span class="qty-val">1</span>
-                  <button class="qty-btn">+</button>
-                </div>
-                <div class="cart-price" style="min-width:70px;text-align:right">฿2,490</div>
-                <button style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px 8px">×</button>
-              </div>
-              <div class="cart-item">
-                <div class="cart-emoji">☕</div>
-                <div style="flex:1">
-                  <div class="cart-name">กาแฟดริป Premium</div>
-                  <div style="font-size:12px;color:var(--muted)">฿280 / ชิ้น</div>
-                </div>
-                <div class="qty-ctrl">
-                  <button class="qty-btn">−</button>
-                  <span class="qty-val">1</span>
-                  <button class="qty-btn">+</button>
-                </div>
-                <div class="cart-price" style="min-width:70px;text-align:right">฿280</div>
-                <button style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px 8px">×</button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div>
-          <div class="section" style="padding:20px;">
-            <div class="section-title" style="margin-bottom:16px">สรุปคำสั่งซื้อ</div>
-            <div style="display:flex;justify-content:space-between;margin-bottom:10px;font-size:13.5px">
-              <span style="color:var(--muted)">ราคาสินค้า</span><span>฿3,470</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;margin-bottom:10px;font-size:13.5px">
-              <span style="color:var(--muted)">ค่าจัดส่ง</span><span>฿50</span>
-            </div>
-            <div style="border-top:1px solid var(--border);margin:14px 0;"></div>
-            <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:600">
-              <span>รวมทั้งสิ้น</span>
-              <span style="color:var(--accent);font-family:var(--mono)">฿3,520</span>
-            </div>
-            <button class="btn btn-primary" style="width:100%;margin-top:20px;justify-content:center;padding:12px" onclick="openModal('upload-slip')">
-              ดำเนินการชำระเงิน →
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ===== MY ORDERS PAGE (Customer) ===== -->
-    <div class="page" id="page-myorders">
-      <div class="section">
-        <div class="section-head"><div class="section-title">ออเดอร์ของฉัน</div></div>
-        <table>
-          <thead>
-            <tr><th>Order ID</th><th>วันที่สั่ง</th><th>รายการ</th><th>ยอดรวม</th><th>สถานะ</th><th></th></tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">#ORD-0842</span></td>
-              <td><span style="font-size:12px;color:var(--muted)">21 เม.ย. 2568</span></td>
-              <td>ครีมบำรุง, หูฟัง +1</td>
-              <td class="amount">฿3,520</td>
-              <td><span class="status-pill pill-pending">Pending Verification</span></td>
-              <td><button class="btn btn-ghost" style="padding:5px 12px;font-size:12px" onclick="openModal('order-detail')">ติดตาม</button></td>
-            </tr>
-            <tr>
-              <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">#ORD-0815</span></td>
-              <td><span style="font-size:12px;color:var(--muted)">15 เม.ย. 2568</span></td>
-              <td>รองเท้าวิ่ง ProRun</td>
-              <td class="amount">฿1,940</td>
-              <td><span class="status-pill pill-shipped">Shipped</span></td>
-              <td><button class="btn btn-ghost" style="padding:5px 12px;font-size:12px" onclick="openModal('order-detail')">ติดตาม</button></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- ===== PICKER PAGE ===== -->
-    <div class="page" id="page-picking">
-      <div class="info-box">
-        <span>📋</span>
-        <span>แสดงเฉพาะออเดอร์ที่ <strong>Admin อนุมัติแล้ว</strong> (สถานะ Paid / To Process)</span>
-      </div>
-      <div class="section">
-        <div class="section-head">
-          <div class="section-title">รายการจัดของ</div>
-          <span class="nav-badge" style="margin-left:0">4 รออยู่</span>
-        </div>
-        <table>
-          <thead>
-            <tr><th>Order ID</th><th>ลูกค้า</th><th>รายการสินค้า</th><th>สถานะ</th><th>การดำเนินการ</th></tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">#ORD-0838</span></td>
-              <td>มานี รักเรียน</td>
-              <td>
-                <div style="font-size:12.5px">🧴 ครีมบำรุง ×2</div>
-                <div style="font-size:12.5px">🌿 วิตามิน C ×1</div>
-              </td>
-              <td><span class="status-pill pill-paid">Paid / To Process</span></td>
-              <td>
-                <div style="display:flex;gap:6px;flex-wrap:wrap">
-                  <button class="btn btn-ghost" style="padding:5px 10px;font-size:12px" onclick="openModal('picking-list')">ใบจัดของ 🖨</button>
-                  <button class="btn btn-primary" style="padding:5px 10px;font-size:12px" onclick="openModal('add-tracking')">ใส่ Tracking</button>
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">#ORD-0837</span></td>
+              <td><span class="mono t-sm" style="color:var(--hint)">#ORD-0837</span></td>
               <td>พิมพ์ ใจดี</td>
-              <td>
-                <div style="font-size:12.5px">🎧 หูฟัง Wireless ×1</div>
-              </td>
-              <td><span class="status-pill pill-processing">Processing</span></td>
-              <td>
-                <button class="btn btn-primary" style="padding:5px 10px;font-size:12px" onclick="openModal('add-tracking')">ใส่ Tracking</button>
-              </td>
+              <td><div class="t-sm">🎧 หูฟัง Wireless ×1</div></td>
+              <td><span class="pill pill-processing">กำลังจัดของ</span></td>
+              <td><button class="btn btn-primary btn-sm" onclick="openM('tracking')">ใส่ Tracking</button></td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
 
-  </div><!-- /content -->
-</main>
+  </div><!-- /content-area -->
+</div><!-- /main -->
+</div><!-- /app -->
 
-<!-- ===== MODALS ===== -->
+<!-- ───────── MODALS ───────── -->
 
-<!-- Order Detail Modal -->
-<div class="overlay" id="modal-order-detail" onclick="if(event.target===this)closeModal('order-detail')">
-  <div class="modal">
-    <div class="modal-head">
-      <div>
-        <div class="modal-title">ออเดอร์ #ORD-0842</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px">สมชาย มีสุข · 21 เม.ย. 2568, 14:32</div>
-      </div>
-      <button class="modal-close" onclick="closeModal('order-detail')">×</button>
+<!-- Order Detail -->
+<div class="overlay" id="m-order-detail" onclick="if(event.target===this)closeM('order-detail')">
+<div class="modal">
+  <div class="modal-head">
+    <div><div class="modal-title">ออเดอร์ #ORD-0842</div><div class="t-sm muted" style="margin-top:2px">สมชาย มีสุข · 21 เม.ย. 2568, 14:32</div></div>
+    <button class="modal-close" onclick="closeM('order-detail')">×</button>
+  </div>
+  <div class="modal-body">
+    <div class="timeline">
+      <div class="tl-item"><div class="tl-dot done"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><div><div class="tl-label">ส่งคำขอเบิกแล้ว</div><div class="tl-time">21 เม.ย. 2568, 14:32</div></div></div>
+      <div class="tl-item"><div class="tl-dot active"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div><div><div class="tl-label">รอตรวจสอบและอนุมัติ</div><div class="tl-time">21 เม.ย. 2568, 14:35</div></div></div>
+      <div class="tl-item"><div class="tl-dot"><span style="font-size:9px;color:var(--hint)">3</span></div><div><div class="tl-label" style="color:var(--hint)">อนุมัติ</div><div class="tl-time">รอดำเนินการ</div></div></div>
+      <div class="tl-item"><div class="tl-dot"><span style="font-size:9px;color:var(--hint)">4</span></div><div><div class="tl-label" style="color:var(--hint)">จัดส่ง</div><div class="tl-time">รอดำเนินการ</div></div></div>
     </div>
-    <div class="modal-body">
-      <div class="order-timeline">
-        <div class="timeline-item">
-          <div class="timeline-dot done">✓</div>
-          <div class="timeline-info">
-            <div class="timeline-title">สั่งซื้อสำเร็จ</div>
-            <div class="timeline-time">21 เม.ย. 2568, 14:32</div>
-          </div>
-        </div>
-        <div class="timeline-item">
-          <div class="timeline-dot active">⏳</div>
-          <div class="timeline-info">
-            <div class="timeline-title">รอตรวจสอบการชำระเงิน</div>
-            <div class="timeline-time">21 เม.ย. 2568, 14:35</div>
-          </div>
-        </div>
-        <div class="timeline-item">
-          <div class="timeline-dot">3</div>
-          <div class="timeline-info">
-            <div class="timeline-title" style="color:var(--muted)">อนุมัติออเดอร์</div>
-            <div class="timeline-time">รอดำเนินการ</div>
-          </div>
-        </div>
-        <div class="timeline-item">
-          <div class="timeline-dot">4</div>
-          <div class="timeline-info">
-            <div class="timeline-title" style="color:var(--muted)">กำลังจัดส่ง</div>
-            <div class="timeline-time">รอดำเนินการ</div>
-          </div>
-        </div>
+    <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px;">รายการสินค้า</div>
+      <div class="order-items-list">
+        <div class="order-item-row"><span class="oi-emoji">🧴</span><span class="oi-name">ครีมบำรุงผิว SPF50</span><span class="oi-qty">×2</span></div>
+        <div class="order-item-row"><span class="oi-emoji">🎧</span><span class="oi-name">หูฟัง Wireless X3</span><span class="oi-qty">×1</span></div>
       </div>
-      <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
-        <div style="font-size:13px;font-weight:500;margin-bottom:12px">รายการสินค้า</div>
-        <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border)">
-          <span>🧴 ครีมบำรุงผิว SPF50 ×2</span><span class="amount">฿700</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border)">
-          <span>🎧 หูฟัง Wireless X3 ×1</span><span class="amount">฿2,490</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border)">
-          <span style="color:var(--muted)">ค่าจัดส่ง</span><span class="amount">฿50</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:600;padding:10px 0">
-          <span>รวมทั้งสิ้น</span><span class="amount" style="color:var(--accent)">฿3,240</span>
-        </div>
-      </div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeModal('order-detail')">ปิด</button>
-      <button class="btn btn-primary" onclick="closeModal('order-detail');openModal('verify-payment')">ตรวจสอบการชำระเงิน</button>
     </div>
   </div>
-</div>
-
-<!-- Verify Payment Modal -->
-<div class="overlay" id="modal-verify-payment" onclick="if(event.target===this)closeModal('verify-payment')">
-  <div class="modal">
-    <div class="modal-head">
-      <div class="modal-title">ตรวจสอบการชำระเงิน #ORD-0842</div>
-      <button class="modal-close" onclick="closeModal('verify-payment')">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="info-box warning">
-        <span>⚠</span>
-        <span>ยอดที่ต้องชำระ: <strong>฿3,240</strong> — กรุณาตรวจสอบให้ตรงกับ Slip ที่แนบมา</span>
-      </div>
-      <div class="slip-preview">
-        <div class="slip-img-placeholder">
-          <div class="slip-icon">🧾</div>
-          <div class="slip-text">หลักฐานการโอนเงิน<br><span style="font-family:var(--mono);font-size:13px;color:var(--accent)">slip_ord0842.jpg</span></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left">
-          <div style="font-size:12px;color:var(--muted)">ธนาคาร</div><div style="font-size:12px;font-family:var(--mono)">กสิกรไทย</div>
-          <div style="font-size:12px;color:var(--muted)">วันที่โอน</div><div style="font-size:12px;font-family:var(--mono)">21/04/68 14:35</div>
-          <div style="font-size:12px;color:var(--muted)">ยอดเงิน</div><div style="font-size:12px;font-family:var(--mono);color:var(--accent)">฿3,240.00</div>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">หมายเหตุ (ถ้ามี)</label>
-        <input class="form-input" type="text" placeholder="เช่น ยอดถูกต้อง / ยอดไม่ตรง">
-      </div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-danger" onclick="closeModal('verify-payment');showToast('❌ ปฏิเสธการชำระเงิน — แจ้งลูกค้าแนบใหม่','error')">ปฏิเสธ</button>
-      <button class="btn btn-primary" onclick="closeModal('verify-payment');showToast('✅ อนุมัติการชำระเงินสำเร็จ','success')">✓ อนุมัติ</button>
-    </div>
+  <div class="modal-foot">
+    <button class="btn btn-outline" onclick="closeM('order-detail')">ปิด</button>
+    <button class="btn btn-primary" onclick="closeM('order-detail');openM('verify')">ตรวจสอบและอนุมัติ</button>
   </div>
 </div>
-
-<!-- Upload Slip Modal -->
-<div class="overlay" id="modal-upload-slip" onclick="if(event.target===this)closeModal('upload-slip')">
-  <div class="modal">
-    <div class="modal-head">
-      <div class="modal-title">แนบหลักฐานการชำระเงิน</div>
-      <button class="modal-close" onclick="closeModal('upload-slip')">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="info-box">
-        <span>💳</span>
-        <span>โอนเงินมาที่บัญชี <strong>กสิกรไทย 123-4-56789-0</strong> (ร้านค้า ABC) ยอด <strong style="color:var(--accent)">฿3,520</strong></span>
-      </div>
-      <div style="border:2px dashed var(--border2);border-radius:10px;padding:32px;text-align:center;cursor:pointer;margin-bottom:16px" onclick="showToast('📁 เลือกไฟล์...','info')">
-        <div style="font-size:36px;margin-bottom:10px">📷</div>
-        <div style="font-size:13.5px;font-weight:500;margin-bottom:4px">อัปโหลด Slip / หลักฐานการโอน</div>
-        <div style="font-size:12px;color:var(--muted)">คลิกเพื่อเลือกไฟล์ หรือลากวางที่นี่ (JPG, PNG, PDF)</div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">หมายเหตุเพิ่มเติม</label>
-        <input class="form-input" type="text" placeholder="เช่น โอนจากชื่อ...">
-      </div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeModal('upload-slip')">ยกเลิก</button>
-      <button class="btn btn-primary" onclick="closeModal('upload-slip');showToast('✅ ส่งหลักฐานการชำระเงินสำเร็จ','success')">ส่งหลักฐาน</button>
-    </div>
-  </div>
 </div>
 
-<!-- Add Product Modal -->
-<div class="overlay" id="modal-add-product" onclick="if(event.target===this)closeModal('add-product')">
-  <div class="modal">
-    <div class="modal-head">
-      <div class="modal-title">เพิ่มสินค้าใหม่</div>
-      <button class="modal-close" onclick="closeModal('add-product')">×</button>
+<!-- Verify -->
+<div class="overlay" id="m-verify" onclick="if(event.target===this)closeM('verify')">
+<div class="modal">
+  <div class="modal-head">
+    <div class="modal-title">ตรวจสอบและอนุมัติ #ORD-0842</div>
+    <button class="modal-close" onclick="closeM('verify')">×</button>
+  </div>
+  <div class="modal-body">
+    <div class="info-box warn">
+      <svg width="14" height="14" style="flex-shrink:0;margin-top:1px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      กรุณาตรวจสอบเอกสารก่อนอนุมัติ
     </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label class="form-label">ชื่อสินค้า</label>
-        <input class="form-input" type="text" placeholder="ชื่อสินค้า">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">ราคา (บาท)</label>
-          <input class="form-input" type="number" placeholder="0.00">
-        </div>
-        <div class="form-group">
-          <label class="form-label">จำนวนสต็อก</label>
-          <input class="form-input" type="number" placeholder="0">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">หมวดหมู่</label>
-        <select class="form-select">
-          <option>เลือกหมวดหมู่</option>
-          <option>ความงาม</option>
-          <option>อาหาร / เครื่องดื่ม</option>
-          <option>เสื้อผ้า</option>
-          <option>อิเล็กทรอนิกส์</option>
-          <option>สุขภาพ</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">รูปสินค้า</label>
-        <div style="border:2px dashed var(--border2);border-radius:8px;padding:24px;text-align:center;cursor:pointer" onclick="showToast('📁 เลือกรูปภาพ...','info')">
-          <div style="font-size:28px;margin-bottom:6px">🖼</div>
-          <div style="font-size:12px;color:var(--muted)">คลิกเพื่ออัปโหลดรูป</div>
-        </div>
+    <div class="slip-frame" style="margin-bottom:14px">
+      <div style="font-size:12px;font-weight:600;color:var(--sub);margin-bottom:8px;">เอกสารแนบ</div>
+      <div class="slip-placeholder">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 7h6M9 11h6M9 15h4"/></svg>
+        <span>slip_ord0842.jpg</span>
+        <button class="btn btn-outline btn-sm" onclick="showToast('📂 เปิดไฟล์แล้ว','info')">เปิดไฟล์</button>
       </div>
     </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeModal('add-product')">ยกเลิก</button>
-      <button class="btn btn-primary" onclick="closeModal('add-product');showToast('✅ เพิ่มสินค้าสำเร็จ','success')">+ เพิ่มสินค้า</button>
+    <div class="form-group">
+      <label class="form-label">หมายเหตุ (ถ้ามี)</label>
+      <input class="form-input" type="text" placeholder="บันทึกเพิ่มเติม...">
     </div>
   </div>
-</div>
-
-<!-- Edit Product Modal -->
-<div class="overlay" id="modal-edit-product" onclick="if(event.target===this)closeModal('edit-product')">
-  <div class="modal">
-    <div class="modal-head">
-      <div class="modal-title">แก้ไขสินค้า</div>
-      <button class="modal-close" onclick="closeModal('edit-product')">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label class="form-label">ชื่อสินค้า</label>
-        <input class="form-input" type="text" value="หูฟัง Wireless X3">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">ราคา (บาท)</label>
-          <input class="form-input" type="number" value="2490">
-        </div>
-        <div class="form-group">
-          <label class="form-label">จำนวนสต็อก</label>
-          <input class="form-input" type="number" value="3">
-        </div>
-      </div>
-      <div class="info-box warning">
-        <span>⚠</span>
-        <span>สต็อกต่ำ — ควรเติมสินค้า</span>
-      </div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-danger" onclick="closeModal('edit-product');showToast('🗑 ลบสินค้าแล้ว','error')">ลบสินค้า</button>
-      <button class="btn btn-ghost" onclick="closeModal('edit-product')">ยกเลิก</button>
-      <button class="btn btn-primary" onclick="closeModal('edit-product');showToast('✅ บันทึกการแก้ไขสำเร็จ','success')">บันทึก</button>
-    </div>
+  <div class="modal-foot">
+    <button class="btn btn-danger" onclick="closeM('verify');showToast('❌ ปฏิเสธออเดอร์แล้ว','error')">ปฏิเสธ</button>
+    <button class="btn btn-outline" onclick="closeM('verify')">ยกเลิก</button>
+    <button class="btn btn-primary" onclick="closeM('verify');showToast('✅ อนุมัติออเดอร์สำเร็จ','success')">✓ อนุมัติ</button>
   </div>
 </div>
-
-<!-- Add Tracking Modal -->
-<div class="overlay" id="modal-add-tracking" onclick="if(event.target===this)closeModal('add-tracking')">
-  <div class="modal">
-    <div class="modal-head">
-      <div class="modal-title">ใส่เลข Tracking #ORD-0838</div>
-      <button class="modal-close" onclick="closeModal('add-tracking')">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label class="form-label">บริษัทขนส่ง</label>
-        <select class="form-select">
-          <option>Flash Express</option>
-          <option>Kerry Express</option>
-          <option>J&T Express</option>
-          <option>Thailand Post</option>
-          <option>SCG Express</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">เลขพัสดุ (Tracking Number)</label>
-        <input class="form-input" type="text" placeholder="TH1234567890AB">
-      </div>
-      <div class="form-group">
-        <label class="form-label">วันที่จัดส่ง</label>
-        <input class="form-input" type="date" value="2025-04-21">
-      </div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeModal('add-tracking')">ยกเลิก</button>
-      <button class="btn btn-primary" onclick="closeModal('add-tracking');showToast('📦 อัปเดต Tracking สำเร็จ — สถานะ: Shipped','success')">ยืนยันการจัดส่ง</button>
-    </div>
-  </div>
 </div>
 
-<!-- Picking List Modal -->
-<div class="overlay" id="modal-picking-list" onclick="if(event.target===this)closeModal('picking-list')">
-  <div class="modal">
-    <div class="modal-head">
-      <div class="modal-title">ใบจัดของ #ORD-0838</div>
-      <button class="modal-close" onclick="closeModal('picking-list')">×</button>
+<!-- Submit Request -->
+<div class="overlay" id="m-submit-request" onclick="if(event.target===this)closeM('submit-request')">
+<div class="modal">
+  <div class="modal-head">
+    <div class="modal-title">ส่งคำขอเบิกสินค้า</div>
+    <button class="modal-close" onclick="closeM('submit-request')">×</button>
+  </div>
+  <div class="modal-body">
+    <div class="form-group">
+      <label class="form-label">สินค้าที่ต้องการ</label>
+      <select class="form-select"><option>เลือกสินค้า</option><option>ครีมบำรุงผิว SPF50</option><option>รองเท้าวิ่ง ProRun</option><option>หูฟัง Wireless X3</option></select>
     </div>
-    <div class="modal-body">
-      <div style="border:1px solid var(--border2);border-radius:10px;padding:20px;background:var(--bg3)">
-        <div style="display:flex;justify-content:space-between;margin-bottom:16px">
-          <div>
-            <div style="font-size:13px;font-weight:600">StoreOS — ใบจัดของ</div>
-            <div style="font-size:11px;color:var(--muted);font-family:var(--mono)">#ORD-0838 · 21/04/68</div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-size:11px;color:var(--muted)">ลูกค้า</div>
-            <div style="font-size:13px;font-weight:500">มานี รักเรียน</div>
-          </div>
-        </div>
-        <table style="font-size:12.5px">
-          <thead><tr><th style="padding:8px 10px">สินค้า</th><th style="padding:8px 10px">จำนวน</th><th style="padding:8px 10px">ตำแหน่ง</th><th style="padding:8px 10px">✓</th></tr></thead>
-          <tbody>
-            <tr><td style="padding:8px 10px">🧴 ครีมบำรุงผิว SPF50</td><td style="padding:8px 10px;font-family:var(--mono)">×2</td><td style="padding:8px 10px;color:var(--muted)">ชั้น A-3</td><td style="padding:8px 10px"><input type="checkbox"></td></tr>
-            <tr><td style="padding:8px 10px">🌿 วิตามิน C 1000mg</td><td style="padding:8px 10px;font-family:var(--mono)">×1</td><td style="padding:8px 10px;color:var(--muted)">ชั้น B-1</td><td style="padding:8px 10px"><input type="checkbox"></td></tr>
-          </tbody>
-        </table>
-        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);font-size:12px">
-          <div style="font-weight:500;margin-bottom:6px">ที่อยู่จัดส่ง:</div>
-          <div style="color:var(--muted)">มานี รักเรียน · 089-123-4567<br>123/45 ถ.พหลโยธิน ลาดยาว จตุจักร กรุงเทพฯ 10900</div>
-        </div>
+    <div class="form-group">
+      <label class="form-label">จำนวน</label>
+      <input class="form-input" type="number" min="1" value="1">
+    </div>
+    <div class="form-group">
+      <label class="form-label">แนบเอกสาร (ถ้ามี)</label>
+      <div class="upload-area" onclick="showToast('📁 เลือกไฟล์...','info')">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--hint)" stroke-width="1.5" style="margin-bottom:6px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <div style="font-size:13px;color:var(--sub)">คลิกเพื่ออัปโหลดเอกสาร</div>
+        <div class="t-xs hint">PDF, JPG, PNG</div>
       </div>
     </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeModal('picking-list')">ปิด</button>
-      <button class="btn btn-primary" onclick="showToast('🖨 กำลังพิมพ์ใบจัดของ...','info')">🖨 พิมพ์</button>
+    <div class="form-group">
+      <label class="form-label">เหตุผลการเบิก</label>
+      <textarea class="form-input" placeholder="ระบุเหตุผลหรือโครงการที่ใช้..."></textarea>
     </div>
   </div>
+  <div class="modal-foot">
+    <button class="btn btn-outline" onclick="closeM('submit-request')">ยกเลิก</button>
+    <button class="btn btn-primary" onclick="closeM('submit-request');showToast('✅ ส่งคำขอเบิกสำเร็จ','success')">ส่งคำขอ</button>
+  </div>
+</div>
 </div>
 
-<!-- TOAST CONTAINER -->
-<div class="toast-container" id="toast-container"></div>
+<!-- Add Product -->
+<div class="overlay" id="m-add-product" onclick="if(event.target===this)closeM('add-product')">
+<div class="modal">
+  <div class="modal-head">
+    <div class="modal-title">เพิ่มสินค้าใหม่</div>
+    <button class="modal-close" onclick="closeM('add-product')">×</button>
+  </div>
+  <div class="modal-body">
+    <div class="form-group"><label class="form-label">ชื่อสินค้า</label><input class="form-input" type="text" placeholder="ชื่อสินค้า"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">รหัสสินค้า (SKU)</label><input class="form-input" type="text" placeholder="SKU-0000"></div>
+      <div class="form-group"><label class="form-label">จำนวนสต็อก</label><input class="form-input" type="number" placeholder="0"></div>
+    </div>
+    <div class="form-group"><label class="form-label">หมวดหมู่</label><select class="form-select"><option>เลือกหมวดหมู่</option><option>ความงาม</option><option>อุปกรณ์</option><option>เสื้อผ้า</option><option>อิเล็กทรอนิกส์</option><option>สุขภาพ</option></select></div>
+    <div class="form-group">
+      <label class="form-label">รูปสินค้า</label>
+      <div class="upload-area" onclick="showToast('📁 เลือกรูปภาพ...','info')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--hint)" stroke-width="1.5" style="margin-bottom:4px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <div class="t-sm hint">คลิกเพื่ออัปโหลดรูป</div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-outline" onclick="closeM('add-product')">ยกเลิก</button>
+    <button class="btn btn-primary" onclick="closeM('add-product');showToast('✅ เพิ่มสินค้าสำเร็จ','success')">เพิ่มสินค้า</button>
+  </div>
+</div>
+</div>
+
+<!-- Edit Product -->
+<div class="overlay" id="m-edit-product" onclick="if(event.target===this)closeM('edit-product')">
+<div class="modal">
+  <div class="modal-head">
+    <div class="modal-title">แก้ไขสินค้า</div>
+    <button class="modal-close" onclick="closeM('edit-product')">×</button>
+  </div>
+  <div class="modal-body">
+    <div class="form-group"><label class="form-label">ชื่อสินค้า</label><input class="form-input" type="text" value="หูฟัง Wireless X3"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">รหัสสินค้า (SKU)</label><input class="form-input" type="text" value="SKU-0058"></div>
+      <div class="form-group"><label class="form-label">จำนวนสต็อก</label><input class="form-input" type="number" value="3"></div>
+    </div>
+    <div class="info-box warn">
+      <svg width="13" height="13" style="flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      สต็อกต่ำมาก — ควรเติมสินค้า
+    </div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-danger" onclick="closeM('edit-product');showToast('🗑 ลบสินค้าแล้ว','error')">ลบ</button>
+    <button class="btn btn-outline" onclick="closeM('edit-product')">ยกเลิก</button>
+    <button class="btn btn-primary" onclick="closeM('edit-product');showToast('✅ บันทึกสำเร็จ','success')">บันทึก</button>
+  </div>
+</div>
+</div>
+
+<!-- Picking List -->
+<div class="overlay" id="m-picking-list" onclick="if(event.target===this)closeM('picking-list')">
+<div class="modal">
+  <div class="modal-head">
+    <div class="modal-title">ใบจัดของ #ORD-0838</div>
+    <button class="modal-close" onclick="closeM('picking-list')">×</button>
+  </div>
+  <div class="modal-body">
+    <div style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+      <div style="padding:14px 16px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between">
+        <div><div style="font-size:13px;font-weight:600">StoreOS — ใบจัดของ</div><div class="mono t-xs muted">#ORD-0838 · 21/04/68</div></div>
+        <div style="text-align:right"><div class="t-xs muted">ผู้ขอ</div><div style="font-size:13px;font-weight:500">มานี รักเรียน</div></div>
+      </div>
+      <table class="tbl">
+        <thead><tr><th>สินค้า</th><th>จำนวน</th><th>ชั้นวาง</th><th>✓</th></tr></thead>
+        <tbody>
+          <tr><td>🧴 ครีมบำรุงผิว SPF50</td><td class="mono">×2</td><td class="muted t-sm">ชั้น A-3</td><td><input type="checkbox" style="accent-color:var(--accent)"></td></tr>
+          <tr><td>🌿 วิตามิน C 1000mg</td><td class="mono">×1</td><td class="muted t-sm">ชั้น B-1</td><td><input type="checkbox" style="accent-color:var(--accent)"></td></tr>
+        </tbody>
+      </table>
+      <div style="padding:12px 16px;border-top:1px solid var(--border);font-size:12.5px">
+        <span class="muted">ที่อยู่จัดส่ง: </span>มานี รักเรียน · 123/45 ถ.พหลโยธิน จตุจักร กรุงเทพฯ
+      </div>
+    </div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-outline" onclick="closeM('picking-list')">ปิด</button>
+    <button class="btn btn-primary" onclick="showToast('🖨 กำลังพิมพ์...','info')">🖨 พิมพ์</button>
+  </div>
+</div>
+</div>
+
+<!-- Tracking -->
+<div class="overlay" id="m-tracking" onclick="if(event.target===this)closeM('tracking')">
+<div class="modal">
+  <div class="modal-head">
+    <div class="modal-title">บันทึกการจัดส่ง #ORD-0838</div>
+    <button class="modal-close" onclick="closeM('tracking')">×</button>
+  </div>
+  <div class="modal-body">
+    <div class="form-group"><label class="form-label">บริษัทขนส่ง</label><select class="form-select"><option>Flash Express</option><option>Kerry Express</option><option>J&T Express</option><option>ไปรษณีย์ไทย</option></select></div>
+    <div class="form-group"><label class="form-label">เลขพัสดุ</label><input class="form-input mono" type="text" placeholder="TH1234567890AB"></div>
+    <div class="form-group"><label class="form-label">วันที่จัดส่ง</label><input class="form-input" type="date" value="2025-04-21"></div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-outline" onclick="closeM('tracking')">ยกเลิก</button>
+    <button class="btn btn-primary" onclick="closeM('tracking');showToast('📦 บันทึก Tracking สำเร็จ — สถานะ: จัดส่งแล้ว','success')">ยืนยันการจัดส่ง</button>
+  </div>
+</div>
+</div>
+
+<!-- ───────── TOAST ───────── -->
+<div class="toast-wrap" id="toast-wrap"></div>
 
 <script>
-  const ROLES = {
-    admin: {
-      label: 'Admin', color: 'var(--accent2)',
-      nav: [
-        { section: 'ภาพรวม' },
-        { id: 'dashboard', icon: '📊', label: 'Dashboard', active: true },
-        { id: 'orders', icon: '📦', label: 'ออเดอร์', badge: '7' },
-        { section: 'จัดการ' },
-        { id: 'products', icon: '🛍', label: 'สินค้า' },
-      ],
-      topAction: { label: '+ เพิ่มสินค้า', modal: 'add-product' }
-    },
-    customer: {
-      label: 'Customer', color: 'var(--accent)',
-      nav: [
-        { section: 'ร้านค้า' },
-        { id: 'products', icon: '🛍', label: 'สินค้าทั้งหมด', active: true },
-        { id: 'cart', icon: '🛒', label: 'ตะกร้าสินค้า', badge: '3' },
-        { section: 'บัญชีของฉัน' },
-        { id: 'myorders', icon: '📋', label: 'ออเดอร์ของฉัน' },
-      ],
-      topAction: { label: '🛒 ตะกร้า (3)', modal: 'none', page: 'cart' }
-    },
-    picker: {
-      label: 'Picker / Packer', color: 'var(--accent3)',
-      nav: [
-        { section: 'งานของฉัน' },
-        { id: 'picking', icon: '📦', label: 'รายการจัดของ', badge: '4', active: true },
-        { id: 'orders', icon: '📋', label: 'ออเดอร์ทั้งหมด' },
-      ],
-      topAction: { label: '🖨 พิมพ์ใบงาน', modal: 'picking-list' }
+// ── ACCOUNTS ──
+const ACCOUNTS = {
+  'admin@agency.go.th':    { pass:'admin123', role:'admin',    name:'ผู้ดูแลระบบ',  init:'A' },
+  'staff@agency.go.th':    { pass:'staff123', role:'customer', name:'สมชาย มีสุข', init:'ส' },
+  'picker@agency.go.th':   { pass:'pick123',  role:'picker',   name:'มานี รักเรียน', init:'ม' },
+};
+
+// ── ROLE CONFIG ──
+const ROLES = {
+  admin: {
+    label:'Admin', color:'#2d6a4f',
+    nav:[
+      { section:'ภาพรวม' },
+      { id:'dashboard', label:'Dashboard',     icon:'grid' },
+      { id:'orders',    label:'ออเดอร์',        icon:'list', badge:'7' },
+      { section:'จัดการ' },
+      { id:'products',  label:'สินค้า',          icon:'box' },
+    ],
+    topAction: () => `<button class="btn btn-primary" onclick="openM('add-product')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>เพิ่มสินค้า</button>`
+  },
+  customer: {
+    label:'เจ้าหน้าที่', color:'#1e40af',
+    nav:[
+      { section:'เบิกสินค้า' },
+      { id:'request',     label:'ขอเบิกสินค้า',   icon:'cart' },
+      { id:'my-requests', label:'คำขอของฉัน',     icon:'list' },
+    ],
+    topAction: () => `<button class="btn btn-primary" onclick="openM('submit-request')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>ส่งคำขอเบิก</button>`
+  },
+  picker: {
+    label:'เจ้าหน้าที่คลัง', color:'#92400e',
+    nav:[
+      { section:'งานของฉัน' },
+      { id:'picking', label:'รายการจัดของ', icon:'package', badge:'4' },
+      { id:'orders',  label:'ออเดอร์ทั้งหมด', icon:'list' },
+    ],
+    topAction: () => `<button class="btn btn-outline" onclick="openM('picking-list')">🖨 พิมพ์ใบงาน</button>`
+  }
+};
+
+const PAGE_META = {
+  dashboard:   ['Dashboard', '/ ภาพรวม'],
+  orders:      ['ออเดอร์', '/ รายการทั้งหมด'],
+  products:    ['สินค้า', '/ จัดการสต็อก'],
+  request:     ['ขอเบิกสินค้า', '/ เลือกสินค้า'],
+  'my-requests':['คำขอของฉัน', '/ ติดตามสถานะ'],
+  picking:     ['รายการจัดของ', '/ คลังสินค้า'],
+};
+
+const ICONS = {
+  grid:    `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>`,
+  list:    `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,
+  box:     `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>`,
+  cart:    `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>`,
+  package: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,
+};
+
+let currentRole = 'admin';
+let currentUser = null;
+
+function buildNav(role) {
+  const cfg = ROLES[role];
+  let html = '';
+  cfg.nav.forEach(item => {
+    if (item.section) {
+      html += `<div class="nav-section">${item.section}</div>`;
+    } else {
+      const firstPage = cfg.nav.find(i => i.id)?.id;
+      const isActive = item.id === firstPage;
+      html += `<button class="nav-item${isActive?' active':''}" id="ni-${item.id}" onclick="navTo('${item.id}')">
+        <span class="ni">${ICONS[item.icon]||''}</span>
+        ${item.label}
+        ${item.badge ? `<span class="nav-badge">${item.badge}</span>` : ''}
+      </button>`;
     }
-  };
+  });
+  document.getElementById('nav-area').innerHTML = html;
+  document.getElementById('tb-actions').innerHTML = cfg.topAction();
+}
 
-  let currentRole = 'admin';
-  let currentPage = 'dashboard';
+function navTo(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const pg = document.getElementById('pg-'+id);
+  if (pg) pg.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const ni = document.getElementById('ni-'+id);
+  if (ni) ni.classList.add('active');
+  const meta = PAGE_META[id] || [id, ''];
+  document.getElementById('tb-title').textContent = meta[0];
+  document.getElementById('tb-bread').textContent = meta[1];
+}
 
-  const PAGE_TITLES = {
-    dashboard: ['Dashboard', 'ภาพรวมระบบร้านค้า'],
-    orders: ['ออเดอร์', 'จัดการรายการสั่งซื้อ'],
-    products: ['สินค้า', 'จัดการสต็อกสินค้า'],
-    cart: ['ตะกร้าสินค้า', 'รายการสินค้าที่เลือก'],
-    myorders: ['ออเดอร์ของฉัน', 'ติดตามสถานะการสั่งซื้อ'],
-    picking: ['รายการจัดของ', 'ออเดอร์ที่อนุมัติแล้ว']
-  };
+function setUser(acc) {
+  currentUser = acc;
+  document.getElementById('u-name').textContent = acc.name;
+  document.getElementById('u-role').textContent = ROLES[acc.role].label;
+  document.getElementById('u-avatar').textContent = acc.init;
+  document.getElementById('u-avatar').style.background = ROLES[acc.role].color;
+}
 
-  function renderNav(role) {
-    const cfg = ROLES[role];
-    const nav = document.getElementById('nav');
-    nav.innerHTML = '';
-    cfg.nav.forEach(item => {
-      if (item.section) {
-        nav.innerHTML += `<div class="nav-section">${item.section}</div>`;
-      } else {
-        nav.innerHTML += `
-          <div class="nav-item ${item.active ? 'active' : ''}" id="nav-${item.id}" onclick="navTo('${item.id}')">
-            <span class="nav-icon">${item.icon}</span>
-            ${item.label}
-            ${item.badge ? `<span class="nav-badge">${item.badge}</span>` : ''}
-          </div>`;
-      }
-    });
-    document.getElementById('role-label').textContent = cfg.label;
-    document.getElementById('role-dot').style.background = cfg.color;
-    // topbar action
-    const btn = document.getElementById('topbar-action');
-    btn.textContent = cfg.topAction.label;
-    btn.onclick = cfg.topAction.page
-      ? () => navTo(cfg.topAction.page)
-      : () => openModal(cfg.topAction.modal);
-  }
-
-  function switchRole(role, btn) {
-    currentRole = role;
-    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const firstPage = ROLES[role].nav.find(i => i.id)?.id || 'dashboard';
-    renderNav(role);
+function enterApp(acc) {
+  const ls = document.getElementById('login-screen');
+  ls.classList.add('out');
+  setTimeout(() => {
+    ls.style.display = 'none';
+    const app = document.getElementById('app');
+    app.classList.add('show');
+    currentRole = acc.role;
+    setUser(acc);
+    buildNav(acc.role);
+    const firstPage = ROLES[acc.role].nav.find(i => i.id)?.id || 'dashboard';
     navTo(firstPage);
-  }
+    // reset demo switcher
+    document.querySelectorAll('.demo-btn').forEach(b => {
+      b.classList.toggle('on', b.textContent.trim() === (acc.role === 'admin' ? 'Admin' : acc.role === 'customer' ? 'เจ้าหน้าที่' : 'คลัง'));
+    });
+    showToast('✅ ยินดีต้อนรับ ' + acc.name, 'success');
+  }, 350);
+}
 
-  function navTo(pageId) {
-    currentPage = pageId;
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    const pg = document.getElementById('page-' + pageId);
-    if (pg) pg.classList.add('active');
+function doLogout() {
+  const app = document.getElementById('app');
+  const ls  = document.getElementById('login-screen');
+  app.classList.remove('show');
+  ls.style.display = 'flex';
+  ls.classList.remove('out');
+  document.getElementById('lemail').value = '';
+  document.getElementById('lpass').value  = '';
+  document.getElementById('lerr').classList.remove('show');
+}
 
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    const ni = document.getElementById('nav-' + pageId);
-    if (ni) ni.classList.add('active');
+function togglePw() {
+  const i = document.getElementById('lpass');
+  const b = document.getElementById('pw-eye-btn');
+  i.type = i.type === 'password' ? 'text' : 'password';
+  b.textContent = i.type === 'password' ? '👁' : '🙈';
+}
 
-    const titles = PAGE_TITLES[pageId] || [pageId, ''];
-    document.getElementById('topbar-title').textContent = titles[0];
-    document.getElementById('topbar-sub').textContent = titles[1];
-  }
+function setLoading(on) {
+  document.getElementById('lbtn').disabled = on;
+  document.getElementById('lspin').style.display = on ? 'block' : 'none';
+  document.getElementById('lbtn-txt').textContent = on ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ';
+}
 
-  function openModal(id) {
-    document.getElementById('modal-' + id)?.classList.add('show');
-  }
-  function closeModal(id) {
-    document.getElementById('modal-' + id)?.classList.remove('show');
-  }
+function showLoginErr(msg) {
+  document.getElementById('lerr-msg').textContent = msg;
+  document.getElementById('lerr').classList.add('show');
+  setTimeout(() => document.getElementById('lerr').classList.remove('show'), 3500);
+}
 
-  let toastTimer = null;
-  function showToast(msg, type = 'info') {
-    const icons = { success: '✅', error: '❌', info: 'ℹ️' };
-    const c = document.getElementById('toast-container');
-    const t = document.createElement('div');
-    t.className = `toast ${type}`;
-    t.innerHTML = `<span class="toast-icon">${icons[type]||'ℹ️'}</span>${msg}`;
-    c.appendChild(t);
-    setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(), 300); }, 3000);
-  }
+function doLogin() {
+  const email = document.getElementById('lemail').value.trim();
+  const pass  = document.getElementById('lpass').value;
+  if (!email) { showLoginErr('กรุณากรอกอีเมล'); return; }
+  if (!pass)  { showLoginErr('กรุณากรอกรหัสผ่าน'); return; }
+  setLoading(true);
+  setTimeout(() => {
+    setLoading(false);
+    const acc = ACCOUNTS[email];
+    if (!acc || acc.pass !== pass) {
+      showLoginErr('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+      document.getElementById('lpass').value = '';
+      return;
+    }
+    enterApp(acc);
+  }, 800);
+}
 
-  // Init
-  renderNav('admin');
-  navTo('dashboard');
+function quickLogin(email, pass, role) {
+  document.getElementById('lemail').value = email;
+  document.getElementById('lpass').value  = pass;
+  setLoading(true);
+  setTimeout(() => { setLoading(false); enterApp(ACCOUNTS[email]); }, 600);
+}
+
+function demoSwitch(role, btn) {
+  document.querySelectorAll('.demo-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  currentRole = role;
+  const fakeAcc = Object.values(ACCOUNTS).find(a => a.role === role);
+  if (fakeAcc) { setUser(fakeAcc); }
+  buildNav(role);
+  const firstPage = ROLES[role].nav.find(i => i.id)?.id || 'dashboard';
+  navTo(firstPage);
+}
+
+// ── MODALS ──
+function openM(id)  { document.getElementById('m-'+id)?.classList.add('open'); }
+function closeM(id) { document.getElementById('m-'+id)?.classList.remove('open'); }
+
+// ── TOAST ──
+function showToast(msg, type='info') {
+  const w = document.getElementById('toast-wrap');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  w.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .25s'; setTimeout(()=>t.remove(),300); }, 3000);
+}
 </script>
 </body>
 </html>
